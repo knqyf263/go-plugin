@@ -100,7 +100,7 @@ func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
 		// Replace google known types with custom types so that TinyGo can build them.
 		for _, msg := range f.Messages {
 			for _, field := range msg.Fields {
-				if strings.HasPrefix(string(field.GoIdent.GoImportPath), knownTypesPrefix) {
+				if field.Message != nil && strings.HasPrefix(string(field.Message.GoIdent.GoImportPath), knownTypesPrefix) {
 					field.Message.GoIdent.GoImportPath = protogen.GoImportPath(
 						strings.ReplaceAll(string(field.Message.GoIdent.GoImportPath),
 							knownTypesPrefix, "github.com/knqyf263/go-plugin/types/known/"),
@@ -341,36 +341,6 @@ func genEnum(g *protogen.GeneratedFile, f *fileInfo, e *enumInfo) {
 	g.P("return p")
 	g.P("}")
 	g.P()
-
-	genEnumReflectMethods(g, f, e)
-
-	// UnmarshalJSON method.
-	if e.genJSONMethod && e.Desc.Syntax() == protoreflect.Proto2 {
-		g.P("// Deprecated: Do not use.")
-		g.P("func (x *", e.GoIdent, ") UnmarshalJSON(b []byte) Error {")
-		g.P("num, err := ", protoimplPackage.Ident("X"), ".UnmarshalJSONEnum(x.Descriptor(), b)")
-		g.P("if err != nil {")
-		g.P("return err")
-		g.P("}")
-		g.P("*x = ", e.GoIdent, "(num)")
-		g.P("return nil")
-		g.P("}")
-		g.P()
-	}
-
-	// EnumDescriptor method.
-	if e.genRawDescMethod {
-		var indexes []string
-		for i := 1; i < len(e.Location.Path); i += 2 {
-			indexes = append(indexes, strconv.Itoa(int(e.Location.Path[i])))
-		}
-		g.P("// Deprecated: Use ", e.GoIdent, ".Descriptor instead.")
-		g.P("func (", e.GoIdent, ") EnumDescriptor() ([]byte, []int) {")
-		g.P("return ", rawDescVarName(f), "GZIP(), []int{", strings.Join(indexes, ","), "}")
-		g.P("}")
-		g.P()
-		f.needRawDesc = true
-	}
 }
 
 func genMessage(g *protogen.GeneratedFile, f *fileInfo, m *messageInfo) {

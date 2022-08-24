@@ -60,29 +60,6 @@ func genFileDescriptor(gen *protogen.Plugin, g *protogen.GeneratedFile, f *fileI
 	}
 }
 
-func genEnumReflectMethods(g *protogen.GeneratedFile, f *fileInfo, e *enumInfo) {
-	idx := f.allEnumsByPtr[e]
-	typesVar := enumTypesVarName(f)
-
-	// Descriptor method.
-	g.P("func (", e.GoIdent, ") Descriptor() ", protoreflectPackage.Ident("EnumDescriptor"), " {")
-	g.P("return ", typesVar, "[", idx, "].Descriptor()")
-	g.P("}")
-	g.P()
-
-	// Type method.
-	g.P("func (", e.GoIdent, ") Type() ", protoreflectPackage.Ident("EnumType"), " {")
-	g.P("return &", typesVar, "[", idx, "]")
-	g.P("}")
-	g.P()
-
-	// Number method.
-	g.P("func (x ", e.GoIdent, ") Number() ", protoreflectPackage.Ident("EnumNumber"), " {")
-	g.P("return ", protoreflectPackage.Ident("EnumNumber"), "(x)")
-	g.P("}")
-	g.P()
-}
-
 func genMessageReflectMethods(g *protogen.GeneratedFile, f *fileInfo, m *messageInfo) {
 	// ProtoReflect method.
 	// A dummy method is defined so that it implements proto.Message,
