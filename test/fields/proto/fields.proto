@@ -1,0 +1,71 @@
+syntax = "proto3";
+package greeting;
+
+option go_package = "github.com/knqyf263/go-plugin/test/fields/proto";
+
+// go:plugin type=plugin version=1
+service FieldTest {
+  rpc Test(Request) returns (Response) {}
+}
+
+enum Enum {
+  A = 0;
+  B = 1;
+  C = 2;
+}
+
+message Request {
+  double                a = 1;
+  float                 b = 2;
+  int32                 c = 3;
+  int64                 d = 4;
+  uint32                e = 5;
+  uint64                f = 6;
+  sint32                g = 7;
+  sint64                h = 8;
+  fixed32               i = 9;
+  fixed64               j = 10;
+  sfixed32              k = 11;
+  sfixed64              l = 12;
+  bool                  m = 13;
+  string                n = 14;
+  bytes                 o = 15;
+  repeated string       p = 16;
+  map<string, IntValue> q = 17;
+  Nested                r = 18;
+  Enum                  s = 19;
+
+  message Nested {
+    string a = 1;
+  }
+}
+
+message IntValue {
+  int32 a = 1;
+}
+
+message Response {
+  double                a = 1;
+  float                 b = 2;
+  int32                 c = 3;
+  int64                 d = 4;
+  uint32                e = 5;
+  uint64                f = 6;
+  sint32                g = 7;
+  sint64                h = 8;
+  fixed32               i = 9;
+  fixed64               j = 10;
+  sfixed32              k = 11;
+  sfixed64              l = 12;
+  bool                  m = 13;
+  string                n = 14;
+  bytes                 o = 15;
+  repeated string       p = 16;
+  map<string, IntValue> q = 17;
+  Nested                r = 18;
+  Enum                  s = 19;
+
+  message Nested {
+    string a = 1;
+  }
+}
