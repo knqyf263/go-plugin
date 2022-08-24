@@ -12,20 +12,21 @@ func (gg *Generator) generatePluginFile(f *fileInfo) {
 	filename := f.GeneratedFilenamePrefix + "_plugin.pb.go"
 	g := gg.plugin.NewGeneratedFile(filename, f.GoImportPath)
 
+	if len(f.pluginServices) == 0 {
+		g.Skip()
+	}
+
 	// Build constraints
 	g.P("//go:build tinygo.wasm")
 
 	gg.generateHeader(g, f)
 
-	for _, service := range f.allServices {
+	for _, service := range f.pluginServices {
 		genPlugin(g, f, service)
 	}
 }
 
 func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
-	if service.Type != ServicePlugin {
-		return
-	}
 	serviceVar := strings.ToLower(service.GoName[:1]) + service.GoName[1:]
 
 	// Variable definition

@@ -12,13 +12,17 @@ func (gg *Generator) generateHostFile(f *fileInfo) {
 	filename := f.GeneratedFilenamePrefix + "_host.pb.go"
 	g := gg.plugin.NewGeneratedFile(filename, f.GoImportPath)
 
+	if len(f.pluginServices) == 0 {
+		g.Skip()
+	}
+
 	// Build constraints
 	g.P("//go:build !tinygo.wasm")
 
 	gg.generateHeader(g, f)
 	gg.genHostFunctions(g, f)
 
-	for _, service := range f.allServices {
+	for _, service := range f.pluginServices {
 		genHost(g, f, service)
 	}
 }
