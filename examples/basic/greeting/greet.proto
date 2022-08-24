@@ -1,0 +1,19 @@
+syntax = "proto3";
+package greeting;
+
+option go_package = "github.com/knqyf263/go-plugin/examples/basic/greeting";
+
+// The greeting service definition.
+// go:plugin type=plugin
+service Greeter {
+  // Sends a greeting
+  rpc Greet(GreetRequest) returns (GreetReply) {}
+}
+
+// The request message containing the user's name.
+message GreetRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message GreetReply { string message = 1; }
