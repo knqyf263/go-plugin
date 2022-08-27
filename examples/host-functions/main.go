@@ -10,10 +10,6 @@ import (
 	"github.com/knqyf263/go-plugin/examples/host-functions/greeting"
 )
 
-func init() {
-	greeting.RegisterHostFunctions(hostFunctions{})
-}
-
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
@@ -21,14 +17,14 @@ func main() {
 }
 
 func run() error {
-	p, err := greeting.NewGreeterPlugin()
+	ctx := context.Background()
+	p, err := greeting.NewGreeterPlugin(ctx, greeting.GreeterPluginOption{})
 	if err != nil {
 		return err
 	}
 
-	ctx := context.Background()
-
-	greetingPlugin, err := p.Load(ctx, "plugin/greeting.wasm")
+	// Pass my host functions that are embedded into the plugin.
+	greetingPlugin, err := p.Load(ctx, "examples/host-functions/plugin/plugin.wasm", myHostFunctions{})
 	if err != nil {
 		return err
 	}
@@ -45,9 +41,11 @@ func run() error {
 	return nil
 }
 
-type hostFunctions struct{}
+// myHostFunctions implements greeting.HostFunctions
+type myHostFunctions struct{}
 
-func (hostFunctions) HttpGet(ctx context.Context, request greeting.HttpGetRequest) (greeting.HttpGetResponse, error) {
+// HttpGet is embedded into the plugin and can be called by the plugin.
+func (myHostFunctions) HttpGet(ctx context.Context, request greeting.HttpGetRequest) (greeting.HttpGetResponse, error) {
 	resp, err := http.Get(request.Url)
 	if err != nil {
 		return greeting.HttpGetResponse{}, err

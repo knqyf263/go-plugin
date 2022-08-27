@@ -16,7 +16,9 @@ message GreetRequest {
 }
 
 // The response message containing the greetings
-message GreetReply { string message = 1; }
+message GreetReply {
+  string message = 1;
+}
 
 // The host functions embedded into the plugin
 // go:plugin type=host
@@ -25,7 +27,7 @@ service HostFunctions {
   rpc HttpGet(HttpGetRequest) returns (HttpGetResponse) {}
 }
 
-message HttpGetRequest{
+message HttpGetRequest {
   string url = 1;
 }
 

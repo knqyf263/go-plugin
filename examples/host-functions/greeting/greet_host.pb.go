@@ -12,80 +12,59 @@ import (
 	context "context"
 	errors "errors"
 	fmt "fmt"
+	wasm "github.com/knqyf263/go-plugin/wasm"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
 	sys "github.com/tetratelabs/wazero/sys"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/wasi_snapshot_preview1"
+	io "io"
+	fs "io/fs"
 	os "os"
 )
 
-var _hostFunctions HostFunctions
-
-func RegisterHostFunctions(h HostFunctions) {
-	_hostFunctions = h
+type _hostFunctions struct {
+	HostFunctions
 }
 
-func readMemory(ctx context.Context, m api.Module, offset, size uint32) ([]byte, error) {
-	buf, ok := m.Memory().Read(ctx, offset, size)
-	if !ok {
-		return nil, fmt.Errorf("Memory.Read(%d, %d) out of range", offset, size)
-	}
-	return buf, nil
-}
-
-func writeMemory(ctx context.Context, m api.Module, data []byte) (uint64, error) {
-	malloc := m.ExportedFunction("malloc")
-	if malloc == nil {
-		return 0, errors.New("malloc is not exported")
-	}
-	results, err := malloc.Call(ctx, uint64(len(data)))
-	if err != nil {
-		return 0, err
-	}
-	dataPtr := results[0]
-
-	// The pointer is a linear memory offset, which is where we write the name.
-	if !m.Memory().Write(ctx, uint32(dataPtr), data) {
-		return 0, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d",
-			dataPtr, len(data), m.Memory().Size(ctx))
-	}
-
-	return dataPtr, nil
-}
-
-func hostFunctions() map[string]interface{} {
-	if _hostFunctions == nil {
-		return nil
-	}
+func (h _hostFunctions) Export() map[string]interface{} {
 	return map[string]interface{}{
-		"http_get": HttpGet,
+		"http_get": h._HttpGet(),
 	}
 }
 
 // Sends a HTTP GET request
-func HttpGet(ctx context.Context, m api.Module, offset, size uint32) uint64 {
-	buf, err := readMemory(ctx, m, offset, size)
-	if err != nil {
-		panic(err)
+
+func (h _hostFunctions) _HttpGet() func(ctx context.Context, m api.Module, offset, size uint32) uint64 {
+	return func(ctx context.Context, m api.Module, offset, size uint32) uint64 {
+		buf, err := wasm.ReadMemory(ctx, m, offset, size)
+		if err != nil {
+			panic(err)
+		}
+		var request HttpGetRequest
+		err = request.UnmarshalVT(buf)
+		if err != nil {
+			panic(err)
+		}
+		resp, err := h.HttpGet(ctx, request)
+		if err != nil {
+			panic(err)
+		}
+		buf, err = resp.MarshalVT()
+		if err != nil {
+			panic(err)
+		}
+		ptr, err := wasm.WriteMemory(ctx, m, buf)
+		if err != nil {
+			panic(err)
+		}
+		return (ptr << uint64(32)) | uint64(len(buf))
 	}
-	var request HttpGetRequest
-	err = request.UnmarshalVT(buf)
-	if err != nil {
-		panic(err)
-	}
-	resp, err := _hostFunctions.HttpGet(ctx, request)
-	if err != nil {
-		panic(err)
-	}
-	buf, err = resp.MarshalVT()
-	if err != nil {
-		panic(err)
-	}
-	ptr, err := writeMemory(ctx, m, buf)
-	if err != nil {
-		panic(err)
-	}
-	return (ptr << uint64(32)) | uint64(len(buf))
+}
+
+type GreeterPluginOption struct {
+	Stdout io.Writer
+	Stderr io.Writer
+	FS     fs.FS
 }
 
 type GreeterPlugin struct {
@@ -93,9 +72,7 @@ type GreeterPlugin struct {
 	config  wazero.ModuleConfig
 }
 
-func NewGreeterPlugin() (*GreeterPlugin, error) {
-	// Choose the context to use for function calls.
-	ctx := context.Background()
+func NewGreeterPlugin(ctx context.Context, opt GreeterPluginOption) (*GreeterPlugin, error) {
 
 	// Create a new WebAssembly Runtime.
 	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().
@@ -105,14 +82,14 @@ func NewGreeterPlugin() (*GreeterPlugin, error) {
 	// Combine the above into our baseline config, overriding defaults.
 	config := wazero.NewModuleConfig().
 		// By default, I/O streams are discarded and there's no file system.
-		WithStdout(os.Stdout).WithStderr(os.Stderr)
+		WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
 
 	return &GreeterPlugin{
 		runtime: r,
 		config:  config,
 	}, nil
 }
-func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string) (Greeter, error) {
+func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctions HostFunctions) (Greeter, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err
@@ -121,10 +98,10 @@ func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string) (Greeter, e
 	// Create an empty namespace so that multiple modules will not conflict
 	ns := p.runtime.NewNamespace(ctx)
 
+	h := _hostFunctions{hostFunctions}
+
 	// Instantiate a Go-defined module named "env" that exports functions.
-	_, err = p.runtime.NewModuleBuilder("env").
-		ExportFunctions(hostFunctions()).
-		Instantiate(ctx, ns)
+	_, err = p.runtime.NewModuleBuilder("env").ExportFunctions(h.Export()).Instantiate(ctx, ns)
 	if err != nil {
 		return nil, err
 	}
