@@ -13,6 +13,13 @@ import (
 	wasm "github.com/knqyf263/go-plugin/wasm"
 )
 
+const WellKnownPluginAPIVersion = 1
+
+//export well_known_api_version
+func _well_known_api_version() uint64 {
+	return WellKnownPluginAPIVersion
+}
+
 var wellKnown WellKnown
 
 func RegisterWellKnown(p WellKnown) {

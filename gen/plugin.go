@@ -33,6 +33,16 @@ func (gg *Generator) generatePluginFile(f *fileInfo) {
 func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	serviceVar := strings.ToLower(service.GoName[:1]) + service.GoName[1:]
 
+	// API version
+	g.P("const ", service.GoName, "PluginAPIVersion = ", service.Version)
+	g.P(fmt.Sprintf(`
+		//export %s_api_version
+		func _%s_api_version() uint64 {
+			return %sPluginAPIVersion
+		}`,
+		toSnakeCase(service.GoName), toSnakeCase(service.GoName), service.GoName,
+	))
+
 	// Variable definition
 	g.P("var ", serviceVar, " ", service.GoName)
 

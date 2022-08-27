@@ -61,6 +61,8 @@ func (h _hostFunctions) _HttpGet() func(ctx context.Context, m api.Module, offse
 	}
 }
 
+const GreeterPluginAPIVersion = 1
+
 type GreeterPluginOption struct {
 	Stdout io.Writer
 	Stderr io.Writer
@@ -126,6 +128,21 @@ func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctio
 		} else if !ok {
 			return nil, err
 		}
+	}
+
+	// Compare API versions with the loading plugin
+	apiVersion := module.ExportedFunction("greeter_api_version")
+	if apiVersion == nil {
+		return nil, errors.New("greeter_api_version is not exported")
+	}
+	results, err := apiVersion.Call(ctx)
+	if err != nil {
+		return nil, err
+	} else if len(results) != 1 {
+		return nil, errors.New("invalid greeter_api_version signature")
+	}
+	if results[0] != GreeterPluginAPIVersion {
+		return nil, fmt.Errorf("API version mismatch, host: %d, plugin: %d", GreeterPluginAPIVersion, results[0])
 	}
 
 	greet := module.ExportedFunction("greeter_greet")

@@ -22,6 +22,8 @@ import (
 	os "os"
 )
 
+const KnownTypesTestPluginAPIVersion = 1
+
 type KnownTypesTestPluginOption struct {
 	Stdout io.Writer
 	Stderr io.Writer
@@ -85,6 +87,21 @@ func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (Kno
 		} else if !ok {
 			return nil, err
 		}
+	}
+
+	// Compare API versions with the loading plugin
+	apiVersion := module.ExportedFunction("known_types_test_api_version")
+	if apiVersion == nil {
+		return nil, errors.New("known_types_test_api_version is not exported")
+	}
+	results, err := apiVersion.Call(ctx)
+	if err != nil {
+		return nil, err
+	} else if len(results) != 1 {
+		return nil, errors.New("invalid known_types_test_api_version signature")
+	}
+	if results[0] != KnownTypesTestPluginAPIVersion {
+		return nil, fmt.Errorf("API version mismatch, host: %d, plugin: %d", KnownTypesTestPluginAPIVersion, results[0])
 	}
 
 	test := module.ExportedFunction("known_types_test_test")
@@ -158,6 +175,8 @@ func (p *knownTypesTestPlugin) Test(ctx context.Context, request Request) (respo
 	return response, nil
 }
 
+const EmptyTestPluginAPIVersion = 1
+
 type EmptyTestPluginOption struct {
 	Stdout io.Writer
 	Stderr io.Writer
@@ -221,6 +240,21 @@ func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTes
 		} else if !ok {
 			return nil, err
 		}
+	}
+
+	// Compare API versions with the loading plugin
+	apiVersion := module.ExportedFunction("empty_test_api_version")
+	if apiVersion == nil {
+		return nil, errors.New("empty_test_api_version is not exported")
+	}
+	results, err := apiVersion.Call(ctx)
+	if err != nil {
+		return nil, err
+	} else if len(results) != 1 {
+		return nil, errors.New("invalid empty_test_api_version signature")
+	}
+	if results[0] != EmptyTestPluginAPIVersion {
+		return nil, fmt.Errorf("API version mismatch, host: %d, plugin: %d", EmptyTestPluginAPIVersion, results[0])
 	}
 
 	donothing := module.ExportedFunction("empty_test_do_nothing")

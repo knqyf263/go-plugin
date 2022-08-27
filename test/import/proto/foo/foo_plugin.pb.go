@@ -13,6 +13,13 @@ import (
 	wasm "github.com/knqyf263/go-plugin/wasm"
 )
 
+const FooPluginAPIVersion = 1
+
+//export foo_api_version
+func _foo_api_version() uint64 {
+	return FooPluginAPIVersion
+}
+
 var foo Foo
 
 func RegisterFoo(p Foo) {

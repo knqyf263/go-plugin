@@ -21,6 +21,8 @@ import (
 	os "os"
 )
 
+const FileCatPluginAPIVersion = 1
+
 type FileCatPluginOption struct {
 	Stdout io.Writer
 	Stderr io.Writer
@@ -84,6 +86,21 @@ func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (FileCat, e
 		} else if !ok {
 			return nil, err
 		}
+	}
+
+	// Compare API versions with the loading plugin
+	apiVersion := module.ExportedFunction("file_cat_api_version")
+	if apiVersion == nil {
+		return nil, errors.New("file_cat_api_version is not exported")
+	}
+	results, err := apiVersion.Call(ctx)
+	if err != nil {
+		return nil, err
+	} else if len(results) != 1 {
+		return nil, errors.New("invalid file_cat_api_version signature")
+	}
+	if results[0] != FileCatPluginAPIVersion {
+		return nil, fmt.Errorf("API version mismatch, host: %d, plugin: %d", FileCatPluginAPIVersion, results[0])
 	}
 
 	cat := module.ExportedFunction("file_cat_cat")

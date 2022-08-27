@@ -89,6 +89,8 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 
 func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	pluginName := service.GoName + "Plugin"
+
+	g.P("const ", pluginName, "APIVersion = ", service.Version)
 	g.P(fmt.Sprintf(`
 		type %sOption struct {
 			Stdout %s
@@ -190,12 +192,33 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 				return nil, err
 			}
 		}
+
+		// Compare API versions with the loading plugin
+		apiVersion := module.ExportedFunction("%s_api_version")
+		if apiVersion == nil {
+			return nil, %s("%s_api_version is not exported")
+		}
+		results, err := apiVersion.Call(ctx)
+		if err != nil {
+			return nil, err
+		} else if len(results) != 1 {
+			return nil, %s("invalid %s_api_version signature")
+		}
+		if results[0] != %sAPIVersion {
+			return nil, fmt.Errorf("API version mismatch, host: %%d, plugin: %%d", %sAPIVersion, results[0])
+		}
 `,
 		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
 		initHostFunctions, exportHostFunctions,
 		g.QualifiedGoIdent(wazeroWasiPackage.Ident("NewBuilder")),
 		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
 		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),
+		toSnakeCase(service.GoName),
+		g.QualifiedGoIdent(errorsPackage.Ident("New")),
+		toSnakeCase(service.GoName),
+		g.QualifiedGoIdent(errorsPackage.Ident("New")),
+		toSnakeCase(service.GoName),
+		pluginName, pluginName,
 	))
 
 	errorsNew := g.QualifiedGoIdent(errorsPackage.Ident("New"))

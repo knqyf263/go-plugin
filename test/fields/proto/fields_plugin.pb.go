@@ -13,6 +13,13 @@ import (
 	wasm "github.com/knqyf263/go-plugin/wasm"
 )
 
+const FieldTestPluginAPIVersion = 1
+
+//export field_test_api_version
+func _field_test_api_version() uint64 {
+	return FieldTestPluginAPIVersion
+}
+
 var fieldTest FieldTest
 
 func RegisterFieldTest(p FieldTest) {

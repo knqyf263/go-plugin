@@ -21,6 +21,8 @@ import (
 	os "os"
 )
 
+const BarPluginAPIVersion = 1
+
 type BarPluginOption struct {
 	Stdout io.Writer
 	Stderr io.Writer
@@ -84,6 +86,21 @@ func (p *BarPlugin) Load(ctx context.Context, pluginPath string) (Bar, error) {
 		} else if !ok {
 			return nil, err
 		}
+	}
+
+	// Compare API versions with the loading plugin
+	apiVersion := module.ExportedFunction("bar_api_version")
+	if apiVersion == nil {
+		return nil, errors.New("bar_api_version is not exported")
+	}
+	results, err := apiVersion.Call(ctx)
+	if err != nil {
+		return nil, err
+	} else if len(results) != 1 {
+		return nil, errors.New("invalid bar_api_version signature")
+	}
+	if results[0] != BarPluginAPIVersion {
+		return nil, fmt.Errorf("API version mismatch, host: %d, plugin: %d", BarPluginAPIVersion, results[0])
 	}
 
 	hello := module.ExportedFunction("bar_hello")

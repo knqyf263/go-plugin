@@ -13,6 +13,13 @@ import (
 	wasm "github.com/knqyf263/go-plugin/wasm"
 )
 
+const FileCatPluginAPIVersion = 1
+
+//export file_cat_api_version
+func _file_cat_api_version() uint64 {
+	return FileCatPluginAPIVersion
+}
+
 var fileCat FileCat
 
 func RegisterFileCat(p FileCat) {

@@ -14,6 +14,13 @@ import (
 	wasm "github.com/knqyf263/go-plugin/wasm"
 )
 
+const KnownTypesTestPluginAPIVersion = 1
+
+//export known_types_test_api_version
+func _known_types_test_api_version() uint64 {
+	return KnownTypesTestPluginAPIVersion
+}
+
 var knownTypesTest KnownTypesTest
 
 func RegisterKnownTypesTest(p KnownTypesTest) {
@@ -38,6 +45,13 @@ func _known_types_test_test(ptr, size uint32) uint64 {
 	}
 	ptr, size = wasm.ByteToPtr(b)
 	return (uint64(ptr) << uint64(32)) | uint64(size)
+}
+
+const EmptyTestPluginAPIVersion = 1
+
+//export empty_test_api_version
+func _empty_test_api_version() uint64 {
+	return EmptyTestPluginAPIVersion
 }
 
 var emptyTest EmptyTest

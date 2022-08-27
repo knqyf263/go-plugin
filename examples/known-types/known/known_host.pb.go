@@ -21,6 +21,8 @@ import (
 	os "os"
 )
 
+const WellKnownPluginAPIVersion = 1
+
 type WellKnownPluginOption struct {
 	Stdout io.Writer
 	Stderr io.Writer
@@ -84,6 +86,21 @@ func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (WellKnow
 		} else if !ok {
 			return nil, err
 		}
+	}
+
+	// Compare API versions with the loading plugin
+	apiVersion := module.ExportedFunction("well_known_api_version")
+	if apiVersion == nil {
+		return nil, errors.New("well_known_api_version is not exported")
+	}
+	results, err := apiVersion.Call(ctx)
+	if err != nil {
+		return nil, err
+	} else if len(results) != 1 {
+		return nil, errors.New("invalid well_known_api_version signature")
+	}
+	if results[0] != WellKnownPluginAPIVersion {
+		return nil, fmt.Errorf("API version mismatch, host: %d, plugin: %d", WellKnownPluginAPIVersion, results[0])
 	}
 
 	diff := module.ExportedFunction("well_known_diff")

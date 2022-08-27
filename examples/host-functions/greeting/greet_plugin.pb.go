@@ -13,6 +13,13 @@ import (
 	wasm "github.com/knqyf263/go-plugin/wasm"
 )
 
+const GreeterPluginAPIVersion = 1
+
+//export greeter_api_version
+func _greeter_api_version() uint64 {
+	return GreeterPluginAPIVersion
+}
+
 var greeter Greeter
 
 func RegisterGreeter(p Greeter) {

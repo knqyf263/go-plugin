@@ -13,6 +13,13 @@ import (
 	wasm "github.com/knqyf263/go-plugin/wasm"
 )
 
+const BarPluginAPIVersion = 1
+
+//export bar_api_version
+func _bar_api_version() uint64 {
+	return BarPluginAPIVersion
+}
+
 var bar Bar
 
 func RegisterBar(p Bar) {

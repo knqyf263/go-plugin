@@ -21,6 +21,8 @@ import (
 	os "os"
 )
 
+const FieldTestPluginAPIVersion = 1
+
 type FieldTestPluginOption struct {
 	Stdout io.Writer
 	Stderr io.Writer
@@ -84,6 +86,21 @@ func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTes
 		} else if !ok {
 			return nil, err
 		}
+	}
+
+	// Compare API versions with the loading plugin
+	apiVersion := module.ExportedFunction("field_test_api_version")
+	if apiVersion == nil {
+		return nil, errors.New("field_test_api_version is not exported")
+	}
+	results, err := apiVersion.Call(ctx)
+	if err != nil {
+		return nil, err
+	} else if len(results) != 1 {
+		return nil, errors.New("invalid field_test_api_version signature")
+	}
+	if results[0] != FieldTestPluginAPIVersion {
+		return nil, fmt.Errorf("API version mismatch, host: %d, plugin: %d", FieldTestPluginAPIVersion, results[0])
 	}
 
 	test := module.ExportedFunction("field_test_test")

@@ -22,6 +22,8 @@ import (
 	os "os"
 )
 
+const FooPluginAPIVersion = 1
+
 type FooPluginOption struct {
 	Stdout io.Writer
 	Stderr io.Writer
@@ -85,6 +87,21 @@ func (p *FooPlugin) Load(ctx context.Context, pluginPath string) (Foo, error) {
 		} else if !ok {
 			return nil, err
 		}
+	}
+
+	// Compare API versions with the loading plugin
+	apiVersion := module.ExportedFunction("foo_api_version")
+	if apiVersion == nil {
+		return nil, errors.New("foo_api_version is not exported")
+	}
+	results, err := apiVersion.Call(ctx)
+	if err != nil {
+		return nil, err
+	} else if len(results) != 1 {
+		return nil, errors.New("invalid foo_api_version signature")
+	}
+	if results[0] != FooPluginAPIVersion {
+		return nil, fmt.Errorf("API version mismatch, host: %d, plugin: %d", FooPluginAPIVersion, results[0])
 	}
 
 	hello := module.ExportedFunction("foo_hello")
