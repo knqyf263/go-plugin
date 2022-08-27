@@ -1,0 +1,17 @@
+syntax = "proto3";
+package fs;
+
+option go_package = "github.com/knqyf263/go-plugin/examples/wasi/cat";
+
+// go:plugin type=plugin
+service FileCat {
+  rpc Cat(FileCatRequest) returns (FileCatReply) {}
+}
+
+message FileCatRequest {
+  string file_path = 1;
+}
+
+message FileCatReply {
+  string content = 1;
+}
