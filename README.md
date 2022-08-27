@@ -3,6 +3,7 @@
 `go-plugin` is a Go (golang) plugin system over WebAssembly (abbreviated Wasm).
 As a plugin is compiled to Wasm, it can be size-efficient, memory-safe, sandboxed and portable.
 The plugin system auto-generates Go SDK for plugins from [Protocol Buffers][protobuf] files.
+While it is powered by Wasm, plugin authors/users don't have to be aware of the Wasm specification since the raw Wasm APIs are capsulated by the SDK.
 
 It is inspired by [hashicorp/go-plugin][hashicorp-go-plugin].
 
@@ -90,7 +91,6 @@ Install the following tools:
 Create `greeting.proto`.
 
 ```protobuf
-$ cat greeting.proto
 syntax = "proto3";
 package greeting;
 
@@ -138,9 +138,9 @@ type Greeter interface {
 ```
 
 A plugin author needs to implement `Greeter` and registers the struct via `RegisterGreeter`.
+In this tutorial, we use `plugin.go` as a file name, but it doesn't matter.
 
 ```go
-$ cat plugin.go
 //go:build tinygo.wasm
 
 package main
@@ -166,7 +166,7 @@ func (m MyPlugin) SayHello(ctx context.Context, request greeting.GreetRequest) (
 }
 ```
 
-Then, compile it to Wasm.
+Then, compile it to Wasm by TinyGo.
 
 ```shell
 $ tinygo build -o plugin.wasm -scheduler=none -target=wasi --no-debug plugin.go
@@ -214,7 +214,43 @@ Hello, go-plugin
 ```
 
 That's it! It is easy and intuitive.
-You can see the `hello-world` example [here].
+You can see the `hello-world` example [here][hello-world].
+
+## Advanced
+### Define an interface version
+TBD
+
+### Host functions
+TBD
+
+## Under the hood
+`go-plugin` uses [wazero][wazero] for Wasm runtime.
+Also, it customizes [protobuf-go][protobuf-go] and [vtprotobuf][vtprotobuf] for generating Go code from proto files.
+
+## Q&A
+### Why not hashicorp/go-plugin?
+Launching a plugin as a subprocess is not secure.
+In addition, plugin authors need to distribute multi-arch binaries.
+
+### Why not [the `plugin` package]?
+It is not schema-driven like Protocol Buffers and can easily break signature.
+
+### Why not using [protobuf-go][protobuf-go] directly?
+
+TinyGo [doesn't support Protocol Buffers](https://github.com/tinygo-org/tinygo/issues/2667) natively.
+`go-plugin` generates Go code differently from [protobuf-go] so that TinyGo can compile it.
+
+### Why replacing known types with custom ones?
+You might be aware that your generated code imports [github.com/knqyf263/go-plugin/types/known][go-plugin-known], not [github.com/protocolbuffers/protobuf-go/types/known][protobuf-go-known] when you import types from `google/protobuf/xxx.proto` (a.k.a well-known types) in your proto file.
+As described above, `TinyGo` cannot compile `github.com/protocolbuffers/protobuf-go/types/known` since those types use reflection.
+`go-plugin` provides well-known types compatible with TinyGo and use them.
+
+### Any tips for TinyGo?
+You can refer to https://wazero.io/languages/tinygo/.
+
+### What about other languages?
+`go-plugin` currently supports TinyGo plugins only, but technically, any language that can be compiled into Wasm can be supported.
+Welcome your contribution :)
 
 ## TODO
 
@@ -292,8 +328,14 @@ You can see the `hello-world` example [here].
 [wazero]: https://github.com/tetratelabs/wazero
 [hashicorp-go-plugin]: https://github.com/hashicorp/go-plugin
 [protoc]: https://grpc.io/docs/protoc-installation/
+[vtprotobuf]: https://github.com/planetscale/vtprotobuf
+[plugin]: https://pkg.go.dev/plugin
+
+[protobuf-go]: https://github.com/protocolbuffers/protobuf-go
+[protobuf-go-known]: https://github.com/protocolbuffers/protobuf-go/tree/master/types/known
 
 [tinygo]: https://tinygo.org/
 [tinygo-installation]: https://tinygo.org/getting-started/install/
 
-[hello-world]: 
+[hello-world]: https://github.com/knqyf263/go-plugin/tree/1ebeeca373affc319802989c0fe6304f014861c4/examples/helloworld
+[go-plugin-known]: https://github.com/knqyf263/go-plugin/tree/1ebeeca373affc319802989c0fe6304f014861c4/types/known
