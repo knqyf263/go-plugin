@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.0.1
 // 	protoc               v3.21.5
-// source: examples/basic/greeting/greet.proto
+// source: examples/helloworld/greeting/greet.proto
 
 package greeting
 

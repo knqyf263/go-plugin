@@ -1,10 +1,10 @@
 syntax = "proto3";
 package greeting;
 
-option go_package = "github.com/knqyf263/go-plugin/examples/basic/greeting";
+option go_package = "github.com/knqyf263/go-plugin/examples/helloworld/greeting";
 
 // The greeting service definition.
-// go:plugin type=plugin
+// go:plugin type=plugin version=1
 service Greeter {
   // Sends a greeting
   rpc Greet(GreetRequest) returns (GreetReply) {}
@@ -16,4 +16,6 @@ message GreetRequest {
 }
 
 // The response message containing the greetings
-message GreetReply { string message = 1; }
+message GreetReply {
+  string message = 1;
+}

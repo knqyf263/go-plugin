@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.0.1
 // 	protoc               v3.21.5
-// source: examples/basic/greeting/greet.proto
+// source: examples/helloworld/greeting/greet.proto
 
 package greeting
 
@@ -60,10 +60,8 @@ func (x *GreetReply) GetMessage() string {
 }
 
 // The greeting service definition.
-// go:plugin type=plugin
+// go:plugin type=plugin version=1
 type Greeter interface {
 	// Sends a greeting
 	Greet(context.Context, GreetRequest) (GreetReply, error)
-}
-type EmptyHostFunctions interface {
 }

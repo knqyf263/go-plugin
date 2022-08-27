@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/knqyf263/go-plugin/examples/basic/greeting"
+	"github.com/knqyf263/go-plugin/examples/helloworld/greeting"
 )
 
 func main() {
@@ -15,19 +15,18 @@ func main() {
 }
 
 func run() error {
-	p, err := greeting.NewGreeterPlugin()
-	if err != nil {
-		return err
-	}
-
 	ctx := context.Background()
-
-	morningPlugin, err := p.Load(ctx, "plugin-morning/morning.wasm")
+	p, err := greeting.NewGreeterPlugin(ctx, greeting.GreeterPluginOption{})
 	if err != nil {
 		return err
 	}
 
-	eveningPlugin, err := p.Load(ctx, "plugin-evening/evening.wasm")
+	morningPlugin, err := p.Load(ctx, "examples/basic/plugin-morning/morning.wasm")
+	if err != nil {
+		return err
+	}
+
+	eveningPlugin, err := p.Load(ctx, "examples/basic/plugin-evening/evening.wasm")
 	if err != nil {
 		return err
 	}

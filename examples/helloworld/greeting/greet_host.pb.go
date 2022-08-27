@@ -4,7 +4,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.0.1
 // 	protoc               v3.21.5
-// source: examples/basic/greeting/greet.proto
+// source: examples/helloworld/greeting/greet.proto
 
 package greeting
 
@@ -16,48 +16,15 @@ import (
 	api "github.com/tetratelabs/wazero/api"
 	sys "github.com/tetratelabs/wazero/sys"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/wasi_snapshot_preview1"
+	io "io"
+	fs "io/fs"
 	os "os"
 )
 
-var _hostFunctions EmptyHostFunctions
-
-func RegisterHostFunctions(h EmptyHostFunctions) {
-	_hostFunctions = h
-}
-
-func readMemory(ctx context.Context, m api.Module, offset, size uint32) ([]byte, error) {
-	buf, ok := m.Memory().Read(ctx, offset, size)
-	if !ok {
-		return nil, fmt.Errorf("Memory.Read(%d, %d) out of range", offset, size)
-	}
-	return buf, nil
-}
-
-func writeMemory(ctx context.Context, m api.Module, data []byte) (uint64, error) {
-	malloc := m.ExportedFunction("malloc")
-	if malloc == nil {
-		return 0, errors.New("malloc is not exported")
-	}
-	results, err := malloc.Call(ctx, uint64(len(data)))
-	if err != nil {
-		return 0, err
-	}
-	dataPtr := results[0]
-
-	// The pointer is a linear memory offset, which is where we write the name.
-	if !m.Memory().Write(ctx, uint32(dataPtr), data) {
-		return 0, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d",
-			dataPtr, len(data), m.Memory().Size(ctx))
-	}
-
-	return dataPtr, nil
-}
-
-func hostFunctions() map[string]interface{} {
-	if _hostFunctions == nil {
-		return nil
-	}
-	return map[string]interface{}{}
+type GreeterPluginOption struct {
+	Stdout io.Writer
+	Stderr io.Writer
+	FS     fs.FS
 }
 
 type GreeterPlugin struct {
@@ -65,9 +32,7 @@ type GreeterPlugin struct {
 	config  wazero.ModuleConfig
 }
 
-func NewGreeterPlugin() (*GreeterPlugin, error) {
-	// Choose the context to use for function calls.
-	ctx := context.Background()
+func NewGreeterPlugin(ctx context.Context, opt GreeterPluginOption) (*GreeterPlugin, error) {
 
 	// Create a new WebAssembly Runtime.
 	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().
@@ -77,7 +42,7 @@ func NewGreeterPlugin() (*GreeterPlugin, error) {
 	// Combine the above into our baseline config, overriding defaults.
 	config := wazero.NewModuleConfig().
 		// By default, I/O streams are discarded and there's no file system.
-		WithStdout(os.Stdout).WithStderr(os.Stderr)
+		WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
 
 	return &GreeterPlugin{
 		runtime: r,
@@ -94,9 +59,7 @@ func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string) (Greeter, e
 	ns := p.runtime.NewNamespace(ctx)
 
 	// Instantiate a Go-defined module named "env" that exports functions.
-	_, err = p.runtime.NewModuleBuilder("env").
-		ExportFunctions(hostFunctions()).
-		Instantiate(ctx, ns)
+	_, err = p.runtime.NewModuleBuilder("env").Instantiate(ctx, ns)
 	if err != nil {
 		return nil, err
 	}

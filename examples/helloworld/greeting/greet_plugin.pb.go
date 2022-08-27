@@ -4,14 +4,13 @@
 // versions:
 // 	protoc-gen-go-plugin v0.0.1
 // 	protoc               v3.21.5
-// source: examples/basic/greeting/greet.proto
+// source: examples/helloworld/greeting/greet.proto
 
 package greeting
 
 import (
 	context "context"
-	reflect "reflect"
-	unsafe "unsafe"
+	wasm "github.com/knqyf263/go-plugin/wasm"
 )
 
 var greeter Greeter
@@ -20,24 +19,9 @@ func RegisterGreeter(p Greeter) {
 	greeter = p
 }
 
-func ptrToByte(ptr, size uint32) []byte {
-	var b []byte
-	s := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	s.Len = uintptr(size)
-	s.Cap = uintptr(size)
-	s.Data = uintptr(ptr)
-	return b
-}
-
-func byteToPtr(buf []byte) (uint32, uint32) {
-	ptr := &buf[0]
-	unsafePtr := uintptr(unsafe.Pointer(ptr))
-	return uint32(unsafePtr), uint32(len(buf))
-}
-
 //export greeter_greet
 func _greeter_greet(ptr, size uint32) uint64 {
-	b := ptrToByte(ptr, size)
+	b := wasm.PtrToByte(ptr, size)
 	var req GreetRequest
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
@@ -51,12 +35,6 @@ func _greeter_greet(ptr, size uint32) uint64 {
 	if err != nil {
 		return 0
 	}
-	ptr, size = byteToPtr(b)
+	ptr, size = wasm.ByteToPtr(b)
 	return (uint64(ptr) << uint64(32)) | uint64(size)
-}
-
-type emptyHostFunctions struct{}
-
-func NewEmptyHostFunctions() EmptyHostFunctions {
-	return emptyHostFunctions{}
 }

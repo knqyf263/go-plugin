@@ -5,7 +5,7 @@ package main
 import (
 	"context"
 
-	"github.com/knqyf263/go-plugin/examples/basic/greeting"
+	"github.com/knqyf263/go-plugin/examples/helloworld/greeting"
 )
 
 // main is required for TinyGo to compile to Wasm.
