@@ -1,0 +1,47 @@
+project_name: go-plugin
+builds:
+  -
+    main: cmd/protoc-gen-go-plugin/main.go
+    binary: protoc-gen-go-plugin
+    ldflags:
+      - -s -w
+      - "-extldflags '-static'"
+      - -X version.version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - freebsd
+    goarch:
+      - amd64
+      - 386
+      - arm
+      - arm64
+      - s390x
+      - ppc64le
+    goarm:
+      - 7
+    ignore:
+      - goos: darwin
+        goarch: 386
+
+nfpms:
+  -
+    formats:
+      - deb
+      - rpm
+    vendor: "knqyf263"
+    homepage: "https://github.com/knqyf263/go-plugin"
+    maintainer: "Teppei Fukuda <knqyf263@gmail.com>"
+    description: "Go Plugin System over WebAssembly"
+    license: "MIT"
+    file_name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}"
+
+archives:
+  -
+    format: tar.gz
+    name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}"
+    files:
+      - README.md
+      - LICENSE

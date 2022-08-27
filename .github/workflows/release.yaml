@@ -1,0 +1,29 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_CLI_EXPERIMENTAL: "enabled"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+
+      - name: GoReleaser
+        uses: goreleaser/goreleaser-action@v3
+        with:
+          version: v1.4.1
+          args: release --rm-dist --timeout 30m
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
