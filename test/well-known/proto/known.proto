@@ -1,0 +1,57 @@
+syntax = "proto3";
+package greeting;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "github.com/knqyf263/go-plugin/test/well-known/proto";
+
+// go:plugin type=plugin version=1
+service KnownTypesTest {
+  rpc Test(Request) returns (Response) {}
+}
+
+// go:plugin type=plugin version=1
+service EmptyTest {
+  rpc DoNothing(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+message Request {
+  // duration
+  google.protobuf.Duration a = 1;
+
+  // timestamp
+  google.protobuf.Timestamp b = 2;
+
+  // struct
+  google.protobuf.Value c = 3;
+
+  // wrappers
+  google.protobuf.BoolValue   d = 4;
+  google.protobuf.BytesValue  e = 5;
+  google.protobuf.DoubleValue f = 6;
+  google.protobuf.FloatValue  g = 7;
+  google.protobuf.Int32Value  h = 8;
+  google.protobuf.Int64Value  i = 9;
+  google.protobuf.StringValue j = 10;
+  google.protobuf.UInt32Value k = 11;
+  google.protobuf.UInt64Value l = 12;
+}
+
+message Response {
+  google.protobuf.Duration    a = 1;
+  google.protobuf.Timestamp   b = 2;
+  google.protobuf.Value       c = 3;
+  google.protobuf.BoolValue   d = 4;
+  google.protobuf.BytesValue  e = 5;
+  google.protobuf.DoubleValue f = 6;
+  google.protobuf.FloatValue  g = 7;
+  google.protobuf.Int32Value  h = 8;
+  google.protobuf.Int64Value  i = 9;
+  google.protobuf.StringValue j = 10;
+  google.protobuf.UInt32Value k = 11;
+  google.protobuf.UInt64Value l = 12;
+}
