@@ -10,8 +10,13 @@ tinygo_examples := $(shell find examples -path "*/plugin*/*.go")
 .PHONY: build.examples
 build.examples: $(tinygo_examples:.go=.wasm)
 
-%.wasm: %.go
+tinygo_tests := $(shell find tests -path "*/plugin*/*.go")
+.PHONY: build.tests
+build.tests: $(tinygo_tests:.go=.wasm)
+
+%.wasm: %.go $(GOPATH)/bin/protoc-gen-go-plugin
 	tinygo build -o $@ -scheduler=none --no-debug --target=wasi $<
+
 
 proto_files := $(shell find . -name "*.proto")
 .PHONY: protoc
@@ -25,3 +30,7 @@ fmt: $(proto_files)
 	@for f in $^; do \
 		clang-format -i $$f; \
 	done
+
+.PHONY: test
+test: build.tests
+	go test -v -short ./...
