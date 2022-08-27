@@ -40,6 +40,3 @@ type Empty struct {
 func (x *Empty) ProtoReflect() protoreflect.Message {
 	panic(`not implemented`)
 }
-
-type EmptyHostFunctions interface {
-}
