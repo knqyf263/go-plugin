@@ -1,0 +1,17 @@
+syntax = "proto3";
+package bar;
+
+option go_package = "github.com/knqyf263/go-plugin/tests/import/proto/bar";
+
+// go:plugin type=plugin version=1
+service Bar {
+  rpc Hello(Request) returns (Reply) {}
+}
+
+message Request {
+  string a = 1;
+}
+
+message Reply{
+  string a = 1;
+}

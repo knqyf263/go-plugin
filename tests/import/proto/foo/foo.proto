@@ -1,0 +1,15 @@
+syntax = "proto3";
+package foo;
+
+import "tests/import/proto/bar/bar.proto";
+
+option go_package = "github.com/knqyf263/go-plugin/tests/import/proto/foo";
+
+// go:plugin type=plugin version=1
+service Foo {
+  rpc Hello(Request) returns (bar.Reply) {}
+}
+
+message Request {
+  string a = 1;
+}
