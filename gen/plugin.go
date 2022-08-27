@@ -19,11 +19,15 @@ func (gg *Generator) generatePluginFile(f *fileInfo) {
 	// Build constraints
 	g.P("//go:build tinygo.wasm")
 
+	// Generate header
 	gg.generateHeader(g, f)
 
+	// Generate exported functions that wrap interfaces
 	for _, service := range f.pluginServices {
 		genPlugin(g, f, service)
 	}
+
+	genHostFunctions(g, f)
 }
 
 func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
@@ -37,40 +41,20 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	g.P(serviceVar, "= p")
 	g.P("}")
 
-	// Utilities
-	g.P(fmt.Sprintf(`
-		func ptrToByte(ptr, size uint32) []byte {
-			var b []byte
-			s := (*%s)(%s(&b))
-			s.Len = uintptr(size)
-			s.Cap = uintptr(size)
-			s.Data = uintptr(ptr)
-			return b
-		}
-		
-		func byteToPtr(buf []byte) (uint32, uint32) {
-			ptr := &buf[0]
-			unsafePtr := uintptr(%s(ptr))
-			return uint32(unsafePtr), uint32(len(buf))
-		}`, g.QualifiedGoIdent(reflectPackage.Ident("SliceHeader")),
-		g.QualifiedGoIdent(unsafePackage.Ident("Pointer")),
-		g.QualifiedGoIdent(unsafePackage.Ident("Pointer")),
-	))
-
 	// Exported functions
 	for _, method := range service.Methods {
 		exportedName := toSnakeCase(service.GoName + method.GoName)
 		g.P("//export ", exportedName)
 		g.P("func _", exportedName, "(ptr, size uint32) uint64 {")
-		g.P("b := ptrToByte(ptr, size)")
+		g.P("b := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("PtrToByte")), "(ptr, size)")
 
-		g.P("var req ", method.Input.GoIdent.GoName)
+		g.P("var req ", g.QualifiedGoIdent(method.Input.GoIdent))
 		g.P(`if err := req.UnmarshalVT(b); err != nil {
 						return 0
 					  }`)
 		g.P(fmt.Sprintf(`response, err := %s.%s(%s(), req)`,
 			serviceVar, method.GoName, g.QualifiedGoIdent(contextPackage.Ident("Background"))))
-		g.P(`if err != nil {
+		g.P(fmt.Sprintf(`if err != nil {
 					return 0
 				}
 
@@ -78,9 +62,16 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 				if err != nil {
 					return 0
 				}
-				ptr, size = byteToPtr(b)
-				return (uint64(ptr) << uint64(32)) | uint64(size)`)
+				ptr, size = %s(b)
+				return (uint64(ptr) << uint64(32)) | uint64(size)`,
+			g.QualifiedGoIdent(pluginWasmPackage.Ident("ByteToPtr"))))
 		g.P("}")
+	}
+}
+
+func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
+	if f.hostService == nil {
+		return
 	}
 
 	// Host functions
@@ -103,12 +94,12 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 			if err != nil {
 				return response, err
 			}
-			ptr, size := byteToPtr(buf)
+			ptr, size := %s(buf)
 			ptrSize := _%s(ptr, size)
 
 			ptr = uint32(ptrSize >> 32)
 			size = uint32(ptrSize)
-			buf = ptrToByte(ptr, size)
+			buf = %s(ptr, size)
 
 			if err = response.UnmarshalVT(buf); err != nil {
 				return response, err
@@ -119,7 +110,9 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 			g.QualifiedGoIdent(contextPackage.Ident("Context")),
 			g.QualifiedGoIdent(method.Input.GoIdent),
 			g.QualifiedGoIdent(method.Output.GoIdent),
+			g.QualifiedGoIdent(pluginWasmPackage.Ident("ByteToPtr")),
 			importedName,
+			g.QualifiedGoIdent(pluginWasmPackage.Ident("PtrToByte")),
 		))
 	}
 }

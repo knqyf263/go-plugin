@@ -54,13 +54,6 @@ func (gg *Generator) newFileInfo(file *protogen.File) *fileInfo {
 
 	// Collect all enums, messages, and services in "flattened ordering".
 	// See filetype.TypeBuilder.
-	var walkMessages func([]*protogen.Message, func(*protogen.Message))
-	walkMessages = func(messages []*protogen.Message, f func(*protogen.Message)) {
-		for _, m := range messages {
-			f(m)
-			walkMessages(m.Messages, f)
-		}
-	}
 	initEnumInfos := func(enums []*protogen.Enum) {
 		for _, enum := range enums {
 			f.allEnums = append(f.allEnums, newEnumInfo(f, enum))
@@ -78,8 +71,8 @@ func (gg *Generator) newFileInfo(file *protogen.File) *fileInfo {
 				gg.plugin.Error(err)
 				return
 			}
-			si := newServiceInfo(service, param)
 
+			si := newServiceInfo(service, param)
 			switch param.Type {
 			case ServicePlugin:
 				f.pluginServices = append(f.pluginServices, si)
@@ -93,15 +86,6 @@ func (gg *Generator) newFileInfo(file *protogen.File) *fileInfo {
 				gg.plugin.Error(errors.New("unknown go-plugin type"))
 			}
 			f.allServices = append(f.allServices, si)
-		}
-
-		// Put empty host functions so that it makes generation easier
-		if f.hostService == nil {
-			emptyHostService := newServiceInfo(&protogen.Service{
-				GoName: "EmptyHostFunctions",
-			}, Parameter{Type: ServiceHost, APIVersion: 0})
-			f.hostService = emptyHostService
-			f.allServices = append(f.allServices, emptyHostService)
 		}
 	}
 	initEnumInfos(f.Enums)
@@ -134,6 +118,13 @@ func (gg *Generator) newFileInfo(file *protogen.File) *fileInfo {
 	}
 
 	return f
+}
+
+func walkMessages(messages []*protogen.Message, f func(*protogen.Message)) {
+	for _, m := range messages {
+		f(m)
+		walkMessages(m.Messages, f)
+	}
 }
 
 type enumInfo struct {

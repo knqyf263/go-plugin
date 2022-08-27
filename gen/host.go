@@ -28,58 +28,24 @@ func (gg *Generator) generateHostFile(f *fileInfo) {
 }
 
 func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
+	if f.hostService == nil {
+		return
+	}
+
 	// Define host functions
-	g.P("var _hostFunctions ", f.hostService.GoName)
-	g.P("func RegisterHostFunctions(h ", f.hostService.GoName, ") {")
-	g.P("	_hostFunctions = h")
-	g.P("}")
-	g.P()
-
+	structName := "_" + strings.ToLower(f.hostService.GoName[:1]) + f.hostService.GoName[1:]
 	g.P(fmt.Sprintf(`
-			func readMemory(ctx %s, m %s, offset, size uint32) ([]byte, error) {
-				buf, ok := m.Memory().Read(ctx, offset, size)
-				if !ok {
-					return nil, fmt.Errorf("Memory.Read(%%d, %%d) out of range", offset, size)
-				}
-				return buf, nil
-			}
-			
-			func writeMemory(ctx %s, m %s, data []byte) (uint64, error) {
-				malloc := m.ExportedFunction("malloc")
-				if malloc == nil {
-					return 0, %s("malloc is not exported")
-				}
-				results, err := malloc.Call(ctx, uint64(len(data)))
-				if err != nil {
-					return 0, err
-				}
-				dataPtr := results[0]
-			
-				// The pointer is a linear memory offset, which is where we write the name.
-				if !m.Memory().Write(ctx, uint32(dataPtr), data) {
-					return 0, %s("Memory.Write(%%d, %%d) out of range of memory size %%d",
-						dataPtr, len(data), m.Memory().Size(ctx))
-				}
-
-				return dataPtr, nil
-			}`,
-		g.QualifiedGoIdent(contextPackage.Ident("Context")),
-		g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module")),
-		g.QualifiedGoIdent(contextPackage.Ident("Context")),
-		g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module")),
-		g.QualifiedGoIdent(errorsPackage.Ident("New")),
-		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),
-	))
-	g.P()
+		type %s struct {
+			%s
+		}
+		`, structName, f.hostService.GoName))
 
 	// Define exporting functions
-	g.P(`func hostFunctions() map[string]interface{} {
-				if _hostFunctions == nil {
-					return nil
-				}
-				return map[string]interface{}{`)
+	g.P(fmt.Sprintf(`
+		func (h %s) Export() map[string]interface{} {
+			return map[string]interface{}{`, structName))
 	for _, method := range f.hostService.Methods {
-		g.P(fmt.Sprintf(`"%s": %s,`, toSnakeCase(method.GoName), method.GoName))
+		g.P(fmt.Sprintf(`"%s": h._%s(),`, toSnakeCase(method.GoName), method.GoName))
 	}
 	g.P("	}")
 	g.P("}")
@@ -88,49 +54,69 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			panic(err)
 		}`
 	for _, method := range f.hostService.Methods {
-		g.P(method.Comments.Leading, fmt.Sprintf(`func %s(ctx %s, m %s, offset, size uint32) uint64 {`,
+		g.P(method.Comments.Leading, fmt.Sprintf(`
+			func (h %s) _%s() func(ctx %s, m %s, offset, size uint32) uint64 {`,
+			structName,
 			method.GoName,
 			g.QualifiedGoIdent(contextPackage.Ident("Context")),
 			g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module")),
 		))
-		g.P("buf, err := readMemory(ctx, m, offset, size)")
+		g.P(fmt.Sprintf(`return func(ctx %s, m %s, offset, size uint32) uint64 {`,
+			g.QualifiedGoIdent(contextPackage.Ident("Context")),
+			g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module")),
+		))
+		g.P("buf, err := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("ReadMemory")), "(ctx, m, offset, size)")
 		g.P(errorHandling)
 
 		g.P("var request ", g.QualifiedGoIdent(method.Input.GoIdent))
 		g.P(`err = request.UnmarshalVT(buf)`)
 		g.P(errorHandling)
 
-		g.P("resp, err := _hostFunctions.", method.GoName, "(ctx, request)")
+		g.P("resp, err := h.", method.GoName, "(ctx, request)")
 		g.P(errorHandling)
 
 		g.P("buf, err = resp.MarshalVT()")
 		g.P(errorHandling)
 
-		g.P("ptr, err := writeMemory(ctx, m, buf)")
+		g.P("ptr, err := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("WriteMemory")), "(ctx, m, buf)")
 		g.P(errorHandling)
 
 		g.P("return (ptr << uint64(32)) | uint64(len(buf))")
+		g.P("}")
 		g.P("}")
 	}
 }
 
 func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
-	if service.Type != ServicePlugin {
-		return
-	}
-	g.P(fmt.Sprintf(`type %sPlugin struct {
-			runtime 		%s
-			config  		%s
-		}`, service.GoName,
+	pluginName := service.GoName + "Plugin"
+	g.P(fmt.Sprintf(`
+		type %sOption struct {
+			Stdout %s
+			Stderr %s
+			FS     %s
+		}
+
+		type %s struct {
+			runtime	%s
+			config 	%s
+		}`,
+		pluginName,
+		g.QualifiedGoIdent(ioPackage.Ident("Writer")),
+		g.QualifiedGoIdent(ioPackage.Ident("Writer")),
+		g.QualifiedGoIdent(fsPackage.Ident("FS")),
+		pluginName,
 		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("ModuleConfig")),
 	))
 
-	pluginName := service.GoName + "Plugin"
-	g.P("func New", pluginName, "() (*", pluginName, ", error) {")
-	g.P(fmt.Sprintf(`// Choose the context to use for function calls.
-			ctx := %s()
-		
+	g.P(fmt.Sprintf(
+		"func New%s(ctx %s, opt %sOption) (*%s, error) {",
+		pluginName,
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		pluginName,
+		pluginName,
+	))
+	g.P(fmt.Sprintf(`
 			// Create a new WebAssembly Runtime.
 			r := %s(ctx, %s().
 				// WebAssembly 2.0 allows use of any version of TinyGo, including 0.24+.
@@ -139,8 +125,8 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 			// Combine the above into our baseline config, overriding defaults.
 			config := %s().
 				// By default, I/O streams are discarded and there's no file system.
-				WithStdout(os.Stdout).WithStderr(os.Stderr)
-			`, g.QualifiedGoIdent(contextPackage.Ident("Background")),
+				WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
+			`,
 		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeWithConfig")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeConfig")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("NewModuleConfig")),
@@ -154,11 +140,19 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 	// Plugin loading
 	structName := strings.ToLower(service.GoName[:1]) + service.GoName[1:] + "Plugin"
-	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string) (%s, error) {",
+	var hostFunctionsArg, initHostFunctions, exportHostFunctions string
+	if f.hostService != nil {
+		hostFunctionsArg = ", hostFunctions " + f.hostService.GoName
+		initHostFunctions = "h := _" + strings.ToLower(f.hostService.GoName[:1]) + f.hostService.GoName[1:] + "{hostFunctions}"
+		exportHostFunctions = "ExportFunctions(h.Export())."
+	}
+	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s) (%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		hostFunctionsArg,
 		service.GoName,
 	))
+
 	g.P(fmt.Sprintf(`b, err := %s(pluginPath)
 		if err != nil {
 			return nil, err
@@ -167,10 +161,10 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		// Create an empty namespace so that multiple modules will not conflict
 		ns := p.runtime.NewNamespace(ctx)
 
+		%s
+
 		// Instantiate a Go-defined module named "env" that exports functions.
-		_, err = p.runtime.NewModuleBuilder("env").
-			ExportFunctions(hostFunctions()).
-			Instantiate(ctx, ns)
+		_, err = p.runtime.NewModuleBuilder("env").%sInstantiate(ctx, ns)
 		if err != nil {
 			return nil, err
 		}
@@ -198,6 +192,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}
 `,
 		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
+		initHostFunctions, exportHostFunctions,
 		g.QualifiedGoIdent(wazeroWasiPackage.Ident("NewBuilder")),
 		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
 		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),
@@ -259,7 +254,8 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Method, structName string) {
 	g.P("func (p *", structName, ")", method.GoName, "(ctx ", g.QualifiedGoIdent(contextPackage.Ident("Context")),
-		", request ", method.Input.GoIdent.GoName, ")", "(response ", method.Output.GoIdent.GoName, ", err error) {")
+		", request ", g.QualifiedGoIdent(method.Input.GoIdent), ")",
+		"(response ", g.QualifiedGoIdent(method.Output.GoIdent), ", err error) {")
 
 	errorHandling := "if err != nil {return response , err}"
 	g.P("data, err := request.MarshalVT()")

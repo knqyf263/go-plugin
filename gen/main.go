@@ -35,13 +35,15 @@ var SupportedFeatures = uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPT
 // GenerateVersionMarkers specifies whether to generate version markers.
 var GenerateVersionMarkers = true
 
-// Standard library dependencies.
 const (
+	// Standard library dependencies.
 	contextPackage = protogen.GoImportPath("context")
 	errorsPackage  = protogen.GoImportPath("errors")
 	fmtPackage     = protogen.GoImportPath("fmt")
 	unsafePackage  = protogen.GoImportPath("unsafe")
 	osPackage      = protogen.GoImportPath("os")
+	ioPackage      = protogen.GoImportPath("io")
+	fsPackage      = protogen.GoImportPath("io/fs")
 	base64Package  = protogen.GoImportPath("encoding/base64")
 	mathPackage    = protogen.GoImportPath("math")
 	reflectPackage = protogen.GoImportPath("reflect")
@@ -49,7 +51,6 @@ const (
 	stringsPackage = protogen.GoImportPath("strings")
 	syncPackage    = protogen.GoImportPath("sync")
 	timePackage    = protogen.GoImportPath("time")
-	utf8Package    = protogen.GoImportPath("unicode/utf8")
 
 	knownTypesPrefix = "google.golang.org/protobuf/types/known/"
 )
@@ -71,6 +72,8 @@ var (
 	wazeroAPIPackage  goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero/api")
 	wazeroSysPackage  goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero/sys")
 	wazeroWasiPackage goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero/wasi_snapshot_preview1")
+
+	pluginWasmPackage goImportPath = protogen.GoImportPath("github.com/knqyf263/go-plugin/wasm")
 )
 
 type goImportPath interface {
@@ -98,14 +101,17 @@ func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
 		}
 
 		// Replace google known types with custom types so that TinyGo can build them.
-		for _, msg := range f.Messages {
-			for _, field := range msg.Fields {
-				if field.Message != nil && strings.HasPrefix(string(field.Message.GoIdent.GoImportPath), knownTypesPrefix) {
-					field.Message.GoIdent.GoImportPath = protogen.GoImportPath(
-						strings.ReplaceAll(string(field.Message.GoIdent.GoImportPath),
-							knownTypesPrefix, "github.com/knqyf263/go-plugin/types/known/"),
-					)
-				}
+		walkMessages(f.Messages, func(message *protogen.Message) {
+			for _, field := range message.Fields {
+				replaceImport(field.Message)
+			}
+			replaceImport(message)
+		})
+		for _, svc := range f.Services {
+			for _, method := range svc.Methods {
+				walkMessages([]*protogen.Message{method.Input, method.Output}, func(message *protogen.Message) {
+					replaceImport(message)
+				})
 			}
 		}
 	}
@@ -114,6 +120,18 @@ func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
 		plugin: plugin,
 		vtgen:  vtgen,
 	}, nil
+}
+
+func replaceImport(m *protogen.Message) {
+	if m == nil {
+		return
+	}
+	if strings.HasPrefix(string(m.GoIdent.GoImportPath), knownTypesPrefix) {
+		m.GoIdent.GoImportPath = protogen.GoImportPath(
+			strings.ReplaceAll(string(m.GoIdent.GoImportPath),
+				knownTypesPrefix, "github.com/knqyf263/go-plugin/types/known/"),
+		)
+	}
 }
 
 // GenerateFiles generates the contents of a .pb.go file.
