@@ -5,7 +5,7 @@
 
 syntax = "proto3";
 
-package timestamppb;
+package google.protobuf;
 
 option go_package = "github.com/knqyf263/go-plugin/types/known/timestamppb";
 
