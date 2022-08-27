@@ -1,0 +1,24 @@
+syntax = "proto3";
+package greeting;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/knqyf263/go-plugin/examples/well-known/known";
+
+// The greeting service definition.
+// go:plugin type=plugin
+service WellKnown {
+  rpc Diff(DiffRequest) returns (DiffReply) {}
+}
+
+message DiffRequest {
+  google.protobuf.Value     value = 1;
+  google.protobuf.Timestamp start = 2;
+  google.protobuf.Timestamp end   = 3;
+}
+
+message DiffReply {
+  google.protobuf.Duration duration = 1;
+}
