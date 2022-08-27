@@ -12,6 +12,6 @@ message Request {
   string a = 1;
 }
 
-message Reply{
+message Reply {
   string a = 1;
 }
