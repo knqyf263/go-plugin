@@ -1,0 +1,18 @@
+// Protocol Buffers - Google's data interchange format
+// Copyright 2008 Google Inc.  All rights reserved.
+// Copyright 2022 Teppei Fukuda.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
+
+syntax = "proto3";
+
+package google.protobuf;
+
+option go_package = "github.com/knqyf263/go-plugin/types/known/sourcecontextpb";
+
+// `SourceContext` represents information about the source of a
+// protobuf element, like the file in which it is defined.
+message SourceContext {
+  // The path-qualified name of the .proto file that contained the associated
+  // protobuf element.  For example: `"google/protobuf/source_context.proto"`.
+  string file_name = 1;
+}
