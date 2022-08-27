@@ -434,5 +434,3 @@ func (x *Response_Nested) GetA() string {
 type FieldTest interface {
 	Test(context.Context, Request) (Response, error)
 }
-type EmptyHostFunctions interface {
-}
