@@ -4,7 +4,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/knqyf263/go-plugin/examples/known-types/known"
 	"github.com/knqyf263/go-plugin/types/known/durationpb"
@@ -20,9 +20,8 @@ type WellKnownPlugin struct{}
 func (p WellKnownPlugin) Diff(_ context.Context, request known.DiffRequest) (known.DiffReply, error) {
 	value := request.GetValue().AsInterface()
 	if m, ok := value.(map[string]interface{}); ok {
-		for _, v := range m {
-			log.Printf("I love %s\n", v)
-		}
+		fmt.Printf("I love %s\n", m["A"])
+		fmt.Printf("I love %s\n", m["B"])
 	}
 	return known.DiffReply{
 		Duration: durationpb.New(request.GetEnd().AsTime().Sub(request.GetStart().AsTime())),

@@ -25,7 +25,7 @@ func run() error {
 		return err
 	}
 
-	plugin, err := p.Load(ctx, "examples/known-types/plugin/plugin.wasm")
+	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
 	if err != nil {
 		return err
 	}

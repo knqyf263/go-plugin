@@ -4,7 +4,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/knqyf263/go-plugin/examples/wasi/cat"
@@ -19,8 +19,8 @@ func main() {
 type CatPlugin struct{}
 
 func (CatPlugin) Cat(_ context.Context, request cat.FileCatRequest) (cat.FileCatReply, error) {
-	// The log message is shown in stdout as os.Stdout is attached.
-	log.Println("File loading...")
+	// The message is shown in stdout as os.Stdout is attached.
+	fmt.Println("File loading...")
 	b, err := os.ReadFile(request.GetFilePath())
 	if err != nil {
 		return cat.FileCatReply{}, err

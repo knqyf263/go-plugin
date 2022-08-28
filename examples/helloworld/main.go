@@ -21,12 +21,12 @@ func run() error {
 		return err
 	}
 
-	morningPlugin, err := p.Load(ctx, "examples/helloworld/plugin-morning/morning.wasm")
+	morningPlugin, err := p.Load(ctx, "plugin-morning/morning.wasm")
 	if err != nil {
 		return err
 	}
 
-	eveningPlugin, err := p.Load(ctx, "examples/helloworld/plugin-evening/evening.wasm")
+	eveningPlugin, err := p.Load(ctx, "plugin-evening/evening.wasm")
 	if err != nil {
 		return err
 	}
