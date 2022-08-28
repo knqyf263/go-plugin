@@ -243,7 +243,7 @@ service HostFunctions {
 }
 ```
 
-**NOTE:** the service for host functions mut be defined in the same file where other plugin services are defined.
+**NOTE:** the service for host functions must be defined in the same file where other plugin services are defined.
 
 Let's say `Greeter` is defined in the same file as `HostFunctions`.
 Then, `Load()` will be able to take `HostFunctions` as an argument as mentioned later.
@@ -315,6 +315,33 @@ https://tinygo.org/docs/reference/lang-support/stdlib/
 You have to use third-party JSON libraries such as [gjson][gjson] and [easyjson][easyjson].
 
 Also, you can export a host function. The example is available [here][json-example].
+
+### Logging
+`fmt.Printf` can be used in plugins if you attach `os.Stdout` as below. See [the example][wasi-example] for more details.
+
+```Go
+p, err := cat.NewFileCatPlugin(ctx, cat.FileCatPluginOption{
+	Stdout: os.Stdout, // Attach stdout so that the plugin can write outputs to stdout
+	Stderr: os.Stderr, // Attach stderr so that the plugin can write errors to stderr
+})
+```
+
+If you need structured and leveled logging, you can define host functions so that plugins can call those logging functions.
+
+```protobuf
+// The host functions embedded into the plugin
+// go:plugin type=host
+service LoggingFunctions {
+  // Debug log
+  rpc Debug(LogMessage) returns (google.protobuf.Empty) {}
+  // Info log
+  rpc Info(LogMessage) returns (google.protobuf.Empty) {}
+  // Warn log
+  rpc Info(LogMessage) returns (google.protobuf.Empty) {}
+  // Error log
+  rpc Error(LogMessage) returns (google.protobuf.Empty) {}
+}
+```
 
 ### Plugin distribution
 A plugin author can use OCI registries such as GitHub Container registry (GHCR) to distribute plugins.
