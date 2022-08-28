@@ -1,6 +1,8 @@
 syntax = "proto3";
 package greeting;
 
+import "google/protobuf/empty.proto";
+
 option go_package = "github.com/knqyf263/go-plugin/examples/host-functions/greeting";
 
 // The greeting service definition.
@@ -25,6 +27,8 @@ message GreetReply {
 service HostFunctions {
   // Sends a HTTP GET request
   rpc HttpGet(HttpGetRequest) returns (HttpGetResponse) {}
+  // Shows a log message
+  rpc Log(LogRequest) returns (google.protobuf.Empty) {}
 }
 
 message HttpGetRequest {
@@ -33,4 +37,8 @@ message HttpGetRequest {
 
 message HttpGetResponse {
   bytes response = 1;
+}
+
+message LogRequest {
+  string message = 1;
 }

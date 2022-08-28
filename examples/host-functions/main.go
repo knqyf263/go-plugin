@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/knqyf263/go-plugin/examples/host-functions/greeting"
+	"github.com/knqyf263/go-plugin/types/known/emptypb"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func run() error {
 	}
 
 	// Pass my host functions that are embedded into the plugin.
-	greetingPlugin, err := p.Load(ctx, "examples/host-functions/plugin/plugin.wasm", myHostFunctions{})
+	greetingPlugin, err := p.Load(ctx, "plugin/plugin.wasm", myHostFunctions{})
 	if err != nil {
 		return err
 	}
@@ -58,4 +59,11 @@ func (myHostFunctions) HttpGet(ctx context.Context, request greeting.HttpGetRequ
 	}
 
 	return greeting.HttpGetResponse{Response: buf}, nil
+}
+
+// Log is embedded into the plugin and can be called by the plugin.
+func (myHostFunctions) Log(ctx context.Context, request greeting.LogRequest) (emptypb.Empty, error) {
+	// Use the host logger
+	log.Println(request.GetMessage())
+	return emptypb.Empty{}, nil
 }
