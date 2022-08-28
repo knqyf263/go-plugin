@@ -1,5 +1,7 @@
 # Go Plugin System over WebAssembly
 
+<img src="imgs/icon.png" width="200">
+
 `go-plugin` is a Go (golang) plugin system over WebAssembly (abbreviated Wasm).
 As a plugin is compiled to Wasm, it can be size-efficient, memory-safe, sandboxed and portable.
 The plugin system auto-generates Go SDK for plugins from [Protocol Buffers][protobuf] files.
