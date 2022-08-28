@@ -216,12 +216,109 @@ Hello, go-plugin
 That's it! It is easy and intuitive.
 You can see the `hello-world` example [here][hello-world].
 
-## Advanced
-### Define an interface version
-TBD
-
+## References
 ### Host functions
-TBD
+Wasm has limited capability as it is secure by design, but those can't be achieved with Wasm itself.
+To expand the capability, many compilers implement system calls using WebAssembly System Interface ([WASI][wasi]).
+But it is still draft ([wasi_snapshot_preview1][wasi_snapshot_preview1]) and some functions are not implemented yet in [wazero][wazero] that `go-plugin` uses for Wasm runtime.
+For example, `sock_recv` and `sock_send` are not supported for now.
+It means plugins don't have network access.
+
+Host functions can be used for this purpose.
+A host function is a function expressed outside WebAssembly but passed to a plugin as an import.
+You can define functions in your host and pass them to plugins so that plugins can call the functions.
+Even though Wasm itself doesn't have network access, you can embed such function to plugins.
+
+You can define a service for host functions in a proto file.
+Note that `// go:plugin type=host` is necessary so that `go-plugin` recognizes the service is for host functions.
+The service name is `HostFunctions` in this example, but it doesn't matter.
+
+```protobuf
+// go:plugin type=host
+service HostFunctions {
+  // Sends a HTTP GET request
+  rpc HttpGet(HttpGetRequest) returns (HttpGetResponse) {}
+}
+```
+
+Then, `go-plugin` generates the corresponding Go interface as below.
+
+```go
+// go:plugin type=host
+type HostFunctions interface {
+	// Sends a HTTP GET request
+	HttpGet(context.Context, HttpGetRequest) (HttpGetResponse, error)
+}
+```
+
+Implement the interface.
+
+```go
+// myHostFunctions implements HostFunctions
+type myHostFunctions struct{}
+
+// HttpGet is embedded into the plugin and can be called by the plugin.
+func (myHostFunctions) HttpGet(ctx context.Context, request greeting.HttpGetRequest) (greeting.HttpGetResponse, error) {
+	...
+}
+```
+
+And pass it when loading a plugin.
+
+```go
+greetingPlugin, err := p.Load(ctx, "plugin/plugin.wasm", myHostFunctions{})
+```
+
+Now, plugins can call `HttpGet()`.
+You can see an example [here][host-functions-example].
+
+### Define an interface version
+You can define an interface version in the `// go:plugin` line.
+
+```protobuf
+// go:plugin type=plugin version=2
+service Greeter {
+  // Sends a greeting
+  rpc Greet(GreetRequest) returns (GreetReply) {}
+}
+```
+
+This is useful when interface signatures are changing. 
+When an interface version is incompatible, a human friendly error message is shown to the end user like the following.
+
+```shell
+API version mismatch, host: 2, plugin: 1
+```
+
+## Tips
+### File access
+Refer to [this example][wasi-example].
+
+### JSON parsing
+TinyGo currently doesn't support `encoding/json`.
+https://tinygo.org/docs/reference/lang-support/stdlib/
+
+You have to use third-party JSON libraries such as [gjson][gjson] and [easyjson][easyjson].
+
+Also, you can export a host function. The example is available [here][json-example].
+
+### Plugin distribution
+A plugin author can use OCI registries such as GitHub Container registry (GHCR) to distribute plugins.
+
+Push:
+
+```shell
+$ oras push ghcr.io/knqyf263/my-plugin:latest plugin.wasm:application/vnd.module.wasm.content.layer.v1+wasm
+```
+
+Pull:
+
+```shell
+$ oras pull ghcr.io/knqyf263/my-plugin:latest
+```
+
+### Other TinyGo tips
+You can refer to https://wazero.io/languages/tinygo/.
 
 ## Under the hood
 `go-plugin` uses [wazero][wazero] for Wasm runtime.
@@ -232,12 +329,12 @@ Also, it customizes [protobuf-go][protobuf-go] and [vtprotobuf][vtprotobuf] for 
 Launching a plugin as a subprocess is not secure.
 In addition, plugin authors need to distribute multi-arch binaries.
 
-### Why not [the `plugin` package]?
+### Why not [the official `plugin` package][plugin]?
 It is not schema-driven like Protocol Buffers and can easily break signature.
 
 ### Why not using [protobuf-go][protobuf-go] directly?
 
-TinyGo [doesn't support Protocol Buffers](https://github.com/tinygo-org/tinygo/issues/2667) natively.
+TinyGo [doesn't support Protocol Buffers](https://github.com/tinygo-org/tinygo/issues/2667) natively as of today.
 `go-plugin` generates Go code differently from [protobuf-go] so that TinyGo can compile it.
 
 ### Why replacing known types with custom ones?
@@ -245,8 +342,10 @@ You might be aware that your generated code imports [github.com/knqyf263/go-plug
 As described above, `TinyGo` cannot compile `github.com/protocolbuffers/protobuf-go/types/known` since those types use reflection.
 `go-plugin` provides well-known types compatible with TinyGo and use them.
 
-### Any tips for TinyGo?
-You can refer to https://wazero.io/languages/tinygo/.
+### Why using `// go:plugin` for parameters rather than [protobuf extensions][protobuf-extensions]?
+An extension must be registered in [Protobuf Global Extension Registry][protobuf-registry] to issue a unique extension number.
+Even after that, users needs to download a proto file for the extension.
+It is inconvenient for users and the use case in `go-plugin` is simple enough, so I decided to use comments.
 
 ### What about other languages?
 `go-plugin` currently supports TinyGo plugins only, but technically, any language that can be compiled into Wasm can be supported.
@@ -317,6 +416,7 @@ Welcome your contribution :)
   - [x] Marshaling/Unmarshaling
   - [x] Host code calling plugins
   - [x] Plugin code called by host
+  - [x] Interface version
   - [x] Host functions
 
 
@@ -324,12 +424,16 @@ Welcome your contribution :)
 [protobuf-message]: https://developers.google.com/protocol-buffers/docs/proto3#simple
 [protobuf-service]: https://developers.google.com/protocol-buffers/docs/proto3#services
 [protobuf-spec]: https://developers.google.com/protocol-buffers/docs/proto3
+[protobuf-extensions]: https://developers.google.com/protocol-buffers/docs/proto#extensions
+[protobuf-registry]: https://github.com/protocolbuffers/protobuf/blob/main/docs/options.md
 
 [wazero]: https://github.com/tetratelabs/wazero
 [hashicorp-go-plugin]: https://github.com/hashicorp/go-plugin
 [protoc]: https://grpc.io/docs/protoc-installation/
 [vtprotobuf]: https://github.com/planetscale/vtprotobuf
 [plugin]: https://pkg.go.dev/plugin
+[gjson]: https://github.com/tidwall/gjson
+[easyjson]: https://github.com/mailru/easyjson
 
 [protobuf-go]: https://github.com/protocolbuffers/protobuf-go
 [protobuf-go-known]: https://github.com/protocolbuffers/protobuf-go/tree/master/types/known
@@ -339,3 +443,10 @@ Welcome your contribution :)
 
 [hello-world]: https://github.com/knqyf263/go-plugin/tree/1ebeeca373affc319802989c0fe6304f014861c4/examples/helloworld
 [go-plugin-known]: https://github.com/knqyf263/go-plugin/tree/1ebeeca373affc319802989c0fe6304f014861c4/types/known
+
+[wasi]: https://github.com/WebAssembly/WASI
+[wasi_snapshot_preview1]: https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md
+
+[wasi-example]: https://github.com/knqyf263/go-plugin/tree/main/examples/wasi
+[host-functions-example]: https://github.com/knqyf263/go-plugin/tree/main/examples/host-functions
+[json-example]: https://github.com/knqyf263/go-plugin/tree/main/tests/host-functions
