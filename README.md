@@ -347,6 +347,11 @@ An extension must be registered in [Protobuf Global Extension Registry][protobuf
 Even after that, users needs to download a proto file for the extension.
 It is inconvenient for users and the use case in `go-plugin` is simple enough, so I decided to use comments.
 
+### Why not supporting Go for plugins?
+Go doesn't support [WASI][wasi].
+You can see other reasons [here][wazero-go].
+We might be able to add support for Go as an experimental feature.
+
 ### What about other languages?
 `go-plugin` currently supports TinyGo plugins only, but technically, any language that can be compiled into Wasm can be supported.
 Welcome your contribution :)
@@ -450,3 +455,5 @@ Welcome your contribution :)
 [wasi-example]: https://github.com/knqyf263/go-plugin/tree/main/examples/wasi
 [host-functions-example]: https://github.com/knqyf263/go-plugin/tree/main/examples/host-functions
 [json-example]: https://github.com/knqyf263/go-plugin/tree/main/tests/host-functions
+
+[wazero-go]: https://wazero.io/languages/go/
