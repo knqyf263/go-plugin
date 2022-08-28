@@ -7,6 +7,8 @@ As a plugin is compiled to Wasm, it can be size-efficient, memory-safe, sandboxe
 The plugin system auto-generates Go SDK for plugins from [Protocol Buffers][protobuf] files.
 While it is powered by Wasm, plugin authors/users don't have to be aware of the Wasm specification since the raw Wasm APIs are capsulated by the SDK.
 
+It uses the same definition as gRPC, but `go-plugin` communicates with plugins in memory, not over RPC.
+
 It is inspired by [hashicorp/go-plugin][hashicorp-go-plugin].
 
 ## Features
@@ -61,7 +63,7 @@ This architecture has a number of benefits:
 
 ## Installation
 
-Download a binary here.
+Download a binary [here][releases] and put it in `$PATH`.
 
 ## Usage
 To use the plugin system, you must take the following steps.
@@ -480,6 +482,7 @@ Welcome your contribution :)
 [plugin]: https://pkg.go.dev/plugin
 [gjson]: https://github.com/tidwall/gjson
 [easyjson]: https://github.com/mailru/easyjson
+[wazero-go]: https://wazero.io/languages/go/
 
 [protobuf-go]: https://github.com/protocolbuffers/protobuf-go
 [protobuf-go-known]: https://github.com/protocolbuffers/protobuf-go/tree/master/types/known
@@ -497,4 +500,4 @@ Welcome your contribution :)
 [host-functions-example]: https://github.com/knqyf263/go-plugin/tree/main/examples/host-functions
 [json-example]: https://github.com/knqyf263/go-plugin/tree/main/tests/host-functions
 
-[wazero-go]: https://wazero.io/languages/go/
+[releases]: https://github.com/knqyf263/go-plugin/releases
