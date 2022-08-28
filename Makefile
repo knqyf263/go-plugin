@@ -35,5 +35,5 @@ fmt: $(proto_files)
 	done
 
 .PHONY: test
-test: build.tests
+test: build.tests build.examples
 	go test -v -short ./...
