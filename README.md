@@ -241,13 +241,24 @@ service HostFunctions {
 }
 ```
 
-Then, `go-plugin` generates the corresponding Go interface as below.
+**NOTE:** the service for host functions mut be defined in the same file where other plugin services are defined.
+
+Let's say `Greeter` is defined in the same file as `HostFunctions`.
+Then, `Load()` will be able to take `HostFunctions` as an argument as mentioned later.
+
+```protobuf
+// go:plugin type=plugin version=1
+service Greeter {
+  rpc SayHello(GreetRequest) returns (GreetReply) {}
+}
+```
+
+`go-plugin` generates the corresponding Go interface as below.
 
 ```go
 // go:plugin type=host
 type HostFunctions interface {
-	// Sends a HTTP GET request
-	HttpGet(context.Context, HttpGetRequest) (HttpGetResponse, error)
+    HttpGet(context.Context, HttpGetRequest) (HttpGetResponse, error)
 }
 ```
 
@@ -259,11 +270,12 @@ type myHostFunctions struct{}
 
 // HttpGet is embedded into the plugin and can be called by the plugin.
 func (myHostFunctions) HttpGet(ctx context.Context, request greeting.HttpGetRequest) (greeting.HttpGetResponse, error) {
-	...
+    ...
 }
 ```
 
 And pass it when loading a plugin.
+As described above, `Load()` takes the `HostFunctions` interface.
 
 ```go
 greetingPlugin, err := p.Load(ctx, "plugin/plugin.wasm", myHostFunctions{})
