@@ -2,9 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
-	"os"
-
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/types/pluginpb"
 
@@ -12,23 +9,6 @@ import (
 )
 
 func main() {
-	//b, err := io.ReadAll(os.Stdin)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//if err = os.WriteFile("stdin.txt", b, os.ModePerm); err != nil {
-	//	log.Fatal(err)
-	//}
-	//return
-	if os.Getenv("GO_PLUGIN_DEBUG") != "" {
-		input, err := os.Open("stdin.txt")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer input.Close()
-		os.Stdin = input
-	}
-
 	var flags flag.FlagSet
 	protogen.Options{ParamFunc: flags.Set}.Run(func(plugin *protogen.Plugin) error {
 		g, err := gen.NewGenerator(plugin)
