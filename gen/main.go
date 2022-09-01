@@ -71,7 +71,7 @@ var (
 	wazeroPackage     goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero")
 	wazeroAPIPackage  goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero/api")
 	wazeroSysPackage  goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero/sys")
-	wazeroWasiPackage goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero/wasi_snapshot_preview1")
+	wazeroWasiPackage goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1")
 
 	pluginWasmPackage goImportPath = protogen.GoImportPath("github.com/knqyf263/go-plugin/wasm")
 )

@@ -4,7 +4,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.1.0
 // 	protoc               v3.21.5
-// source: greeting/greet.proto
+// source: examples/helloworld/greeting/greet.proto
 
 package greeting
 
@@ -14,8 +14,8 @@ import (
 	fmt "fmt"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
+	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	sys "github.com/tetratelabs/wazero/sys"
-	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/wasi_snapshot_preview1"
 	io "io"
 	fs "io/fs"
 	os "os"
