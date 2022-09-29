@@ -42,26 +42,28 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 
 	// Define exporting functions
 	g.P(fmt.Sprintf(`
-		func (h %s) Export() map[string]interface{} {
-			return map[string]interface{}{`, structName))
+		// Instantiate a Go-defined module named "env" that exports host functions.
+		func (h %s) Instantiate(ctx context.Context, r wazero.Runtime, ns wazero.Namespace) error {
+			envBuilder := r.NewHostModuleBuilder("env")`, structName))
 	for _, method := range f.hostService.Methods {
-		g.P(fmt.Sprintf(`"%s": h._%s(),`, toSnakeCase(method.GoName), method.GoName))
+		g.P(fmt.Sprintf(`
+			envBuilder.NewFunctionBuilder().WithFunc(h._%s).Export("%s")`,
+			method.GoName, toSnakeCase(method.GoName)))
 	}
-	g.P("	}")
-	g.P("}")
+	g.P(`
+			_, err := envBuilder.Instantiate(ctx, ns)
+			return err
+		}
+`)
 
 	errorHandling := `if err != nil {
 			panic(err)
 		}`
 	for _, method := range f.hostService.Methods {
 		g.P(method.Comments.Leading, fmt.Sprintf(`
-			func (h %s) _%s() func(ctx %s, m %s, offset, size uint32) uint64 {`,
+			func (h %s) _%s(ctx %s, m %s, offset, size uint32) uint64 {`,
 			structName,
 			method.GoName,
-			g.QualifiedGoIdent(contextPackage.Ident("Context")),
-			g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module")),
-		))
-		g.P(fmt.Sprintf(`return func(ctx %s, m %s, offset, size uint32) uint64 {`,
 			g.QualifiedGoIdent(contextPackage.Ident("Context")),
 			g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module")),
 		))
@@ -82,7 +84,6 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		g.P(errorHandling)
 
 		g.P("return (ptr << uint64(32)) | uint64(len(buf))")
-		g.P("}")
 		g.P("}")
 	}
 }
@@ -120,17 +121,14 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	))
 	g.P(fmt.Sprintf(`
 			// Create a new WebAssembly Runtime.
-			r := %s(ctx, %s().
-				// WebAssembly 2.0 allows use of any version of TinyGo, including 0.24+.
-				WithWasmCore2())
+			r := %s(ctx)
 		
 			// Combine the above into our baseline config, overriding defaults.
 			config := %s().
 				// By default, I/O streams are discarded and there's no file system.
 				WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
 			`,
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeWithConfig")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeConfig")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntime")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("NewModuleConfig")),
 	))
 
@@ -142,11 +140,15 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 	// Plugin loading
 	structName := strings.ToLower(service.GoName[:1]) + service.GoName[1:] + "Plugin"
-	var hostFunctionsArg, initHostFunctions, exportHostFunctions string
+	var hostFunctionsArg, exportHostFunctions string
 	if f.hostService != nil {
 		hostFunctionsArg = ", hostFunctions " + f.hostService.GoName
-		initHostFunctions = "h := _" + strings.ToLower(f.hostService.GoName[:1]) + f.hostService.GoName[1:] + "{hostFunctions}"
-		exportHostFunctions = "ExportFunctions(h.Export())."
+		exportHostFunctions = `
+		h := _` + strings.ToLower(f.hostService.GoName[:1]) + f.hostService.GoName[1:] + `{hostFunctions}
+
+		if err := h.Instantiate(ctx, p.runtime, ns); err != nil {
+			return nil, err
+		}`
 	}
 	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s) (%s, error) {",
 		pluginName,
@@ -162,21 +164,14 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 		// Create an empty namespace so that multiple modules will not conflict
 		ns := p.runtime.NewNamespace(ctx)
-
 		%s
-
-		// Instantiate a Go-defined module named "env" that exports functions.
-		_, err = p.runtime.NewModuleBuilder("env").%sInstantiate(ctx, ns)
-		if err != nil {
-			return nil, err
-		}
 
 		if _, err = %s(p.runtime).Instantiate(ctx, ns); err != nil {
 			return nil, err
 		}
 
 		// Compile the WebAssembly module using the default configuration.
-		code, err := p.runtime.CompileModule(ctx, b, wazero.NewCompileConfig())
+		code, err := p.runtime.CompileModule(ctx, b)
 		if err != nil {
 			return nil, err
 		}
@@ -209,7 +204,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}
 `,
 		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
-		initHostFunctions, exportHostFunctions,
+		exportHostFunctions,
 		g.QualifiedGoIdent(wazeroWasiPackage.Ident("NewBuilder")),
 		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
 		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),

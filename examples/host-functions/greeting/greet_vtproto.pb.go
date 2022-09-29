@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.1.0
 // 	protoc               v3.21.5
-// source: examples/host-functions/greeting/greet.proto
+// source: greeting/greet.proto
 
 package greeting
 

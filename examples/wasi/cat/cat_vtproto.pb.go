@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.1.0
 // 	protoc               v3.21.5
-// source: examples/wasi/cat/cat.proto
+// source: cat/cat.proto
 
 package cat
 
