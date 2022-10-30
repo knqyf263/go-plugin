@@ -38,9 +38,7 @@ type KnownTypesTestPlugin struct {
 func NewKnownTypesTestPlugin(ctx context.Context, opt KnownTypesTestPluginOption) (*KnownTypesTestPlugin, error) {
 
 	// Create a new WebAssembly Runtime.
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().
-		// WebAssembly 2.0 allows use of any version of TinyGo, including 0.24+.
-		WithWasmCore2())
+	r := wazero.NewRuntime(ctx)
 
 	// Combine the above into our baseline config, overriding defaults.
 	config := wazero.NewModuleConfig().
@@ -61,18 +59,12 @@ func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (Kno
 	// Create an empty namespace so that multiple modules will not conflict
 	ns := p.runtime.NewNamespace(ctx)
 
-	// Instantiate a Go-defined module named "env" that exports functions.
-	_, err = p.runtime.NewModuleBuilder("env").Instantiate(ctx, ns)
-	if err != nil {
-		return nil, err
-	}
-
 	if _, err = wasi_snapshot_preview1.NewBuilder(p.runtime).Instantiate(ctx, ns); err != nil {
 		return nil, err
 	}
 
 	// Compile the WebAssembly module using the default configuration.
-	code, err := p.runtime.CompileModule(ctx, b, wazero.NewCompileConfig())
+	code, err := p.runtime.CompileModule(ctx, b)
 	if err != nil {
 		return nil, err
 	}
@@ -191,9 +183,7 @@ type EmptyTestPlugin struct {
 func NewEmptyTestPlugin(ctx context.Context, opt EmptyTestPluginOption) (*EmptyTestPlugin, error) {
 
 	// Create a new WebAssembly Runtime.
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().
-		// WebAssembly 2.0 allows use of any version of TinyGo, including 0.24+.
-		WithWasmCore2())
+	r := wazero.NewRuntime(ctx)
 
 	// Combine the above into our baseline config, overriding defaults.
 	config := wazero.NewModuleConfig().
@@ -214,18 +204,12 @@ func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTes
 	// Create an empty namespace so that multiple modules will not conflict
 	ns := p.runtime.NewNamespace(ctx)
 
-	// Instantiate a Go-defined module named "env" that exports functions.
-	_, err = p.runtime.NewModuleBuilder("env").Instantiate(ctx, ns)
-	if err != nil {
-		return nil, err
-	}
-
 	if _, err = wasi_snapshot_preview1.NewBuilder(p.runtime).Instantiate(ctx, ns); err != nil {
 		return nil, err
 	}
 
 	// Compile the WebAssembly module using the default configuration.
-	code, err := p.runtime.CompileModule(ctx, b, wazero.NewCompileConfig())
+	code, err := p.runtime.CompileModule(ctx, b)
 	if err != nil {
 		return nil, err
 	}

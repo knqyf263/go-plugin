@@ -4,7 +4,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.1.0
 // 	protoc               v3.21.5
-// source: examples/host-functions/greeting/greet.proto
+// source: greeting/greet.proto
 
 package greeting
 
@@ -26,69 +26,70 @@ type _hostFunctions struct {
 	HostFunctions
 }
 
-func (h _hostFunctions) Export() map[string]interface{} {
-	return map[string]interface{}{
-		"http_get": h._HttpGet(),
-		"log":      h._Log(),
-	}
+// Instantiate a Go-defined module named "env" that exports host functions.
+func (h _hostFunctions) Instantiate(ctx context.Context, r wazero.Runtime, ns wazero.Namespace) error {
+	envBuilder := r.NewHostModuleBuilder("env")
+
+	envBuilder.NewFunctionBuilder().WithFunc(h._HttpGet).Export("http_get")
+
+	envBuilder.NewFunctionBuilder().WithFunc(h._Log).Export("log")
+
+	_, err := envBuilder.Instantiate(ctx, ns)
+	return err
 }
 
 // Sends a HTTP GET request
 
-func (h _hostFunctions) _HttpGet() func(ctx context.Context, m api.Module, offset, size uint32) uint64 {
-	return func(ctx context.Context, m api.Module, offset, size uint32) uint64 {
-		buf, err := wasm.ReadMemory(ctx, m, offset, size)
-		if err != nil {
-			panic(err)
-		}
-		var request HttpGetRequest
-		err = request.UnmarshalVT(buf)
-		if err != nil {
-			panic(err)
-		}
-		resp, err := h.HttpGet(ctx, request)
-		if err != nil {
-			panic(err)
-		}
-		buf, err = resp.MarshalVT()
-		if err != nil {
-			panic(err)
-		}
-		ptr, err := wasm.WriteMemory(ctx, m, buf)
-		if err != nil {
-			panic(err)
-		}
-		return (ptr << uint64(32)) | uint64(len(buf))
+func (h _hostFunctions) _HttpGet(ctx context.Context, m api.Module, offset, size uint32) uint64 {
+	buf, err := wasm.ReadMemory(ctx, m, offset, size)
+	if err != nil {
+		panic(err)
 	}
+	var request HttpGetRequest
+	err = request.UnmarshalVT(buf)
+	if err != nil {
+		panic(err)
+	}
+	resp, err := h.HttpGet(ctx, request)
+	if err != nil {
+		panic(err)
+	}
+	buf, err = resp.MarshalVT()
+	if err != nil {
+		panic(err)
+	}
+	ptr, err := wasm.WriteMemory(ctx, m, buf)
+	if err != nil {
+		panic(err)
+	}
+	return (ptr << uint64(32)) | uint64(len(buf))
 }
 
 // Shows a log message
 
-func (h _hostFunctions) _Log() func(ctx context.Context, m api.Module, offset, size uint32) uint64 {
-	return func(ctx context.Context, m api.Module, offset, size uint32) uint64 {
-		buf, err := wasm.ReadMemory(ctx, m, offset, size)
-		if err != nil {
-			panic(err)
-		}
-		var request LogRequest
-		err = request.UnmarshalVT(buf)
-		if err != nil {
-			panic(err)
-		}
-		resp, err := h.Log(ctx, request)
-		if err != nil {
-			panic(err)
-		}
-		buf, err = resp.MarshalVT()
-		if err != nil {
-			panic(err)
-		}
-		ptr, err := wasm.WriteMemory(ctx, m, buf)
-		if err != nil {
-			panic(err)
-		}
-		return (ptr << uint64(32)) | uint64(len(buf))
+func (h _hostFunctions) _Log(ctx context.Context, m api.Module, offset, size uint32) uint64 {
+	buf, err := wasm.ReadMemory(ctx, m, offset, size)
+	if err != nil {
+		panic(err)
 	}
+	var request LogRequest
+	err = request.UnmarshalVT(buf)
+	if err != nil {
+		panic(err)
+	}
+	resp, err := h.Log(ctx, request)
+	if err != nil {
+		panic(err)
+	}
+	buf, err = resp.MarshalVT()
+	if err != nil {
+		panic(err)
+	}
+	ptr, err := wasm.WriteMemory(ctx, m, buf)
+	if err != nil {
+		panic(err)
+	}
+	return (ptr << uint64(32)) | uint64(len(buf))
 }
 
 const GreeterPluginAPIVersion = 1
@@ -107,9 +108,7 @@ type GreeterPlugin struct {
 func NewGreeterPlugin(ctx context.Context, opt GreeterPluginOption) (*GreeterPlugin, error) {
 
 	// Create a new WebAssembly Runtime.
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().
-		// WebAssembly 2.0 allows use of any version of TinyGo, including 0.24+.
-		WithWasmCore2())
+	r := wazero.NewRuntime(ctx)
 
 	// Combine the above into our baseline config, overriding defaults.
 	config := wazero.NewModuleConfig().
@@ -132,9 +131,7 @@ func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctio
 
 	h := _hostFunctions{hostFunctions}
 
-	// Instantiate a Go-defined module named "env" that exports functions.
-	_, err = p.runtime.NewModuleBuilder("env").ExportFunctions(h.Export()).Instantiate(ctx, ns)
-	if err != nil {
+	if err := h.Instantiate(ctx, p.runtime, ns); err != nil {
 		return nil, err
 	}
 
@@ -143,7 +140,7 @@ func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctio
 	}
 
 	// Compile the WebAssembly module using the default configuration.
-	code, err := p.runtime.CompileModule(ctx, b, wazero.NewCompileConfig())
+	code, err := p.runtime.CompileModule(ctx, b)
 	if err != nil {
 		return nil, err
 	}

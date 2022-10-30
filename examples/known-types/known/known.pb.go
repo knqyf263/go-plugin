@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.1.0
 // 	protoc               v3.21.5
-// source: examples/known-types/known/known.proto
+// source: known/known.proto
 
 package known
 
