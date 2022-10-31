@@ -4,7 +4,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.1.0
 // 	protoc               v3.21.5
-// source: greeting/greet.proto
+// source: examples/host-functions/greeting/greet.proto
 
 package greeting
 
@@ -22,6 +22,11 @@ import (
 	os "os"
 )
 
+const (
+	i32 = api.ValueTypeI32
+	i64 = api.ValueTypeI64
+)
+
 type _hostFunctions struct {
 	HostFunctions
 }
@@ -30,9 +35,15 @@ type _hostFunctions struct {
 func (h _hostFunctions) Instantiate(ctx context.Context, r wazero.Runtime, ns wazero.Namespace) error {
 	envBuilder := r.NewHostModuleBuilder("env")
 
-	envBuilder.NewFunctionBuilder().WithFunc(h._HttpGet).Export("http_get")
+	envBuilder.NewFunctionBuilder().
+		WithGoModuleFunction(api.GoModuleFunc(h._HttpGet), []api.ValueType{i32, i32}, []api.ValueType{i64}).
+		WithParameterNames("offset", "size").
+		Export("http_get")
 
-	envBuilder.NewFunctionBuilder().WithFunc(h._Log).Export("log")
+	envBuilder.NewFunctionBuilder().
+		WithGoModuleFunction(api.GoModuleFunc(h._Log), []api.ValueType{i32, i32}, []api.ValueType{i64}).
+		WithParameterNames("offset", "size").
+		Export("log")
 
 	_, err := envBuilder.Instantiate(ctx, ns)
 	return err
@@ -40,7 +51,8 @@ func (h _hostFunctions) Instantiate(ctx context.Context, r wazero.Runtime, ns wa
 
 // Sends a HTTP GET request
 
-func (h _hostFunctions) _HttpGet(ctx context.Context, m api.Module, offset, size uint32) uint64 {
+func (h _hostFunctions) _HttpGet(ctx context.Context, m api.Module, params []uint64) []uint64 {
+	offset, size := uint32(params[0]), uint32(params[1])
 	buf, err := wasm.ReadMemory(ctx, m, offset, size)
 	if err != nil {
 		panic(err)
@@ -62,12 +74,14 @@ func (h _hostFunctions) _HttpGet(ctx context.Context, m api.Module, offset, size
 	if err != nil {
 		panic(err)
 	}
-	return (ptr << uint64(32)) | uint64(len(buf))
+	ptrLen := (ptr << uint64(32)) | uint64(len(buf))
+	return []uint64{ptrLen}
 }
 
 // Shows a log message
 
-func (h _hostFunctions) _Log(ctx context.Context, m api.Module, offset, size uint32) uint64 {
+func (h _hostFunctions) _Log(ctx context.Context, m api.Module, params []uint64) []uint64 {
+	offset, size := uint32(params[0]), uint32(params[1])
 	buf, err := wasm.ReadMemory(ctx, m, offset, size)
 	if err != nil {
 		panic(err)
@@ -89,7 +103,8 @@ func (h _hostFunctions) _Log(ctx context.Context, m api.Module, offset, size uin
 	if err != nil {
 		panic(err)
 	}
-	return (ptr << uint64(32)) | uint64(len(buf))
+	ptrLen := (ptr << uint64(32)) | uint64(len(buf))
+	return []uint64{ptrLen}
 }
 
 const GreeterPluginAPIVersion = 1

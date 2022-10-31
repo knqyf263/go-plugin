@@ -22,6 +22,11 @@ import (
 	os "os"
 )
 
+const (
+	i32 = api.ValueTypeI32
+	i64 = api.ValueTypeI64
+)
+
 type _hostFunctions struct {
 	HostFunctions
 }
@@ -30,13 +35,17 @@ type _hostFunctions struct {
 func (h _hostFunctions) Instantiate(ctx context.Context, r wazero.Runtime, ns wazero.Namespace) error {
 	envBuilder := r.NewHostModuleBuilder("env")
 
-	envBuilder.NewFunctionBuilder().WithFunc(h._ParseJson).Export("parse_json")
+	envBuilder.NewFunctionBuilder().
+		WithGoModuleFunction(api.GoModuleFunc(h._ParseJson), []api.ValueType{i32, i32}, []api.ValueType{i64}).
+		WithParameterNames("offset", "size").
+		Export("parse_json")
 
 	_, err := envBuilder.Instantiate(ctx, ns)
 	return err
 }
 
-func (h _hostFunctions) _ParseJson(ctx context.Context, m api.Module, offset, size uint32) uint64 {
+func (h _hostFunctions) _ParseJson(ctx context.Context, m api.Module, params []uint64) []uint64 {
+	offset, size := uint32(params[0]), uint32(params[1])
 	buf, err := wasm.ReadMemory(ctx, m, offset, size)
 	if err != nil {
 		panic(err)
@@ -58,7 +67,8 @@ func (h _hostFunctions) _ParseJson(ctx context.Context, m api.Module, offset, si
 	if err != nil {
 		panic(err)
 	}
-	return (ptr << uint64(32)) | uint64(len(buf))
+	ptrLen := (ptr << uint64(32)) | uint64(len(buf))
+	return []uint64{ptrLen}
 }
 
 const GreeterPluginAPIVersion = 1
