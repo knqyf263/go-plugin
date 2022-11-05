@@ -35,6 +35,11 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 	// Define host functions
 	structName := "_" + strings.ToLower(f.hostService.GoName[:1]) + f.hostService.GoName[1:]
 	g.P(fmt.Sprintf(`
+		const (
+			i32 = api.ValueTypeI32
+			i64 = api.ValueTypeI64
+		)
+
 		type %s struct {
 			%s
 		}
@@ -47,7 +52,10 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			envBuilder := r.NewHostModuleBuilder("env")`, structName))
 	for _, method := range f.hostService.Methods {
 		g.P(fmt.Sprintf(`
-			envBuilder.NewFunctionBuilder().WithFunc(h._%s).Export("%s")`,
+			envBuilder.NewFunctionBuilder().
+			WithGoModuleFunction(api.GoModuleFunc(h._%s), []api.ValueType{i32, i32}, []api.ValueType{i64}).
+			WithParameterNames("offset", "size").
+			Export("%s")`,
 			method.GoName, toSnakeCase(method.GoName)))
 	}
 	g.P(`
@@ -61,12 +69,13 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		}`
 	for _, method := range f.hostService.Methods {
 		g.P(method.Comments.Leading, fmt.Sprintf(`
-			func (h %s) _%s(ctx %s, m %s, offset, size uint32) uint64 {`,
+			func (h %s) _%s(ctx %s, m %s, params []uint64) []uint64 {`,
 			structName,
 			method.GoName,
 			g.QualifiedGoIdent(contextPackage.Ident("Context")),
 			g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module")),
 		))
+		g.P("offset, size := uint32(params[0]), uint32(params[1])")
 		g.P("buf, err := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("ReadMemory")), "(ctx, m, offset, size)")
 		g.P(errorHandling)
 
@@ -83,7 +92,8 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		g.P("ptr, err := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("WriteMemory")), "(ctx, m, buf)")
 		g.P(errorHandling)
 
-		g.P("return (ptr << uint64(32)) | uint64(len(buf))")
+		g.P("ptrLen := (ptr << uint64(32)) | uint64(len(buf))")
+		g.P("return []uint64{ptrLen}")
 		g.P("}")
 	}
 }
