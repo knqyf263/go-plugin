@@ -130,6 +130,9 @@ func (p *knownTypesTestPlugin) Test(ctx context.Context, request Request) (respo
 		return response, err
 	}
 	dataSize := uint64(len(data))
+	if dataSize == 0 {
+		return response, nil
+	}
 	results, err := p.malloc.Call(ctx, dataSize)
 	if err != nil {
 		return response, err
@@ -275,6 +278,9 @@ func (p *emptyTestPlugin) DoNothing(ctx context.Context, request emptypb.Empty) 
 		return response, err
 	}
 	dataSize := uint64(len(data))
+	if dataSize == 0 {
+		return response, nil
+	}
 	results, err := p.malloc.Call(ctx, dataSize)
 	if err != nil {
 		return response, err

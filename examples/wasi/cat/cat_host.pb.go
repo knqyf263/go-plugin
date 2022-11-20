@@ -129,6 +129,9 @@ func (p *fileCatPlugin) Cat(ctx context.Context, request FileCatRequest) (respon
 		return response, err
 	}
 	dataSize := uint64(len(data))
+	if dataSize == 0 {
+		return response, nil
+	}
 	results, err := p.malloc.Call(ctx, dataSize)
 	if err != nil {
 		return response, err

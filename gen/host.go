@@ -289,7 +289,9 @@ func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Me
 	g.P("data, err := request.MarshalVT()")
 	g.P(errorHandling)
 	g.P("dataSize := uint64(len(data))")
-
+	g.P(`if dataSize == 0 {
+			return response, nil 
+		}`)
 	g.P("results, err := p.malloc.Call(ctx, dataSize)")
 	g.P(errorHandling)
 
