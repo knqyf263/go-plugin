@@ -14,7 +14,7 @@ env:
 
 jobs:
   test:
-    name: Test
+    name: Test (TinyGo ${{ matrix.tinygo-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

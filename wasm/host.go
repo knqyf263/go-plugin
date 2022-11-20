@@ -25,7 +25,13 @@ func WriteMemory(ctx context.Context, m api.Module, data []byte) (uint64, error)
 	if malloc == nil {
 		return 0, errors.New("malloc is not exported")
 	}
-	results, err := malloc.Call(ctx, uint64(len(data)))
+
+	l := uint64(len(data))
+	if l == 0 {
+		return 0, nil
+	}
+
+	results, err := malloc.Call(ctx, l)
 	if err != nil {
 		return 0, err
 	}
