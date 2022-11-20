@@ -49,8 +49,8 @@ jobs:
 
       - name: Install TinyGo
         run: |
-          wget https://github.com/tinygo-org/tinygo/releases/download/v${{ matrix-tinygo-version }}/tinygo_${{ matrix-tinygo-version }}_amd64.deb
-          sudo dpkg -i tinygo_${{ matrix-tinygo-version }}_amd64.deb
+          wget https://github.com/tinygo-org/tinygo/releases/download/v${{ matrix.tinygo-version }}/tinygo_${{ matrix.tinygo-version }}_amd64.deb
+          sudo dpkg -i tinygo_${{ matrix.tinygo-version }}_amd64.deb
 
       - name: Run unit tests
         run: make test
