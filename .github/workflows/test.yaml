@@ -11,11 +11,19 @@ on:
 env:
   GO_VERSION: "1.18"
   PROTOC_VERSION: "21.5"
-  TINYGO_VERSION: "0.24.0"
+
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tinygo-version:
+          - "0.24.0"
+          - "0.25.0"
+          - "0.26.0"
+
     steps:
       - uses: actions/checkout@v3
 
@@ -41,8 +49,8 @@ jobs:
 
       - name: Install TinyGo
         run: |
-          wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VERSION}/tinygo_${TINYGO_VERSION}_amd64.deb
-          sudo dpkg -i tinygo_${TINYGO_VERSION}_amd64.deb
+          wget https://github.com/tinygo-org/tinygo/releases/download/v${{ matrix-tinygo-version }}/tinygo_${{ matrix-tinygo-version }}_amd64.deb
+          sudo dpkg -i tinygo_${{ matrix-tinygo-version }}_amd64.deb
 
       - name: Run unit tests
         run: make test
