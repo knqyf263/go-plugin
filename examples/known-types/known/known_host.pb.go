@@ -49,6 +49,14 @@ func NewWellKnownPlugin(ctx context.Context, opt WellKnownPluginOption) (*WellKn
 		config:  config,
 	}, nil
 }
+
+func (p *WellKnownPlugin) Close(ctx context.Context) (err error) {
+	if r := p.runtime; r != nil {
+		err = r.Close(ctx)
+	}
+	return
+}
+
 func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (WellKnown, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

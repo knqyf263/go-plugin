@@ -49,6 +49,14 @@ func NewFileCatPlugin(ctx context.Context, opt FileCatPluginOption) (*FileCatPlu
 		config:  config,
 	}, nil
 }
+
+func (p *FileCatPlugin) Close(ctx context.Context) (err error) {
+	if r := p.runtime; r != nil {
+		err = r.Close(ctx)
+	}
+	return
+}
+
 func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (FileCat, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

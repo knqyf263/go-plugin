@@ -20,6 +20,7 @@ func TestWellKnownTypes(t *testing.T) {
 	ctx := context.Background()
 	p, err := proto.NewKnownTypesTestPlugin(ctx, proto.KnownTypesTestPluginOption{})
 	require.NoError(t, err)
+	defer p.Close(ctx)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
 	require.NoError(t, err)

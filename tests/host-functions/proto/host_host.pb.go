@@ -99,6 +99,14 @@ func NewGreeterPlugin(ctx context.Context, opt GreeterPluginOption) (*GreeterPlu
 		config:  config,
 	}, nil
 }
+
+func (p *GreeterPlugin) Close(ctx context.Context) (err error) {
+	if r := p.runtime; r != nil {
+		err = r.Close(ctx)
+	}
+	return
+}
+
 func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctions HostFunctions) (Greeter, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
