@@ -50,6 +50,14 @@ func NewFooPlugin(ctx context.Context, opt FooPluginOption) (*FooPlugin, error) 
 		config:  config,
 	}, nil
 }
+
+func (p *FooPlugin) Close(ctx context.Context) (err error) {
+	if r := p.runtime; r != nil {
+		err = r.Close(ctx)
+	}
+	return
+}
+
 func (p *FooPlugin) Load(ctx context.Context, pluginPath string) (Foo, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

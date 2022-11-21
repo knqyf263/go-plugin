@@ -15,6 +15,7 @@ func TestImport(t *testing.T) {
 	ctx := context.Background()
 	p, err := foo.NewFooPlugin(ctx, foo.FooPluginOption{})
 	require.NoError(t, err)
+	defer p.Close(ctx)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
 	require.NoError(t, err)

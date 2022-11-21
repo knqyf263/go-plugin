@@ -50,6 +50,14 @@ func NewKnownTypesTestPlugin(ctx context.Context, opt KnownTypesTestPluginOption
 		config:  config,
 	}, nil
 }
+
+func (p *KnownTypesTestPlugin) Close(ctx context.Context) (err error) {
+	if r := p.runtime; r != nil {
+		err = r.Close(ctx)
+	}
+	return
+}
+
 func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (KnownTypesTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
@@ -198,6 +206,14 @@ func NewEmptyTestPlugin(ctx context.Context, opt EmptyTestPluginOption) (*EmptyT
 		config:  config,
 	}, nil
 }
+
+func (p *EmptyTestPlugin) Close(ctx context.Context) (err error) {
+	if r := p.runtime; r != nil {
+		err = r.Close(ctx)
+	}
+	return
+}
+
 func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

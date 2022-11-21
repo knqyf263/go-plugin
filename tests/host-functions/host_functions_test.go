@@ -16,6 +16,7 @@ func TestHostFunctions(t *testing.T) {
 	ctx := context.Background()
 	p, err := proto.NewGreeterPlugin(ctx, proto.GreeterPluginOption{Stdout: os.Stdout})
 	require.NoError(t, err)
+	defer p.Close(ctx)
 
 	// Pass my host functions that are embedded into the plugin.
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm", myHostFunctions{})

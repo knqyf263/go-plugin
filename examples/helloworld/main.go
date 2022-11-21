@@ -20,6 +20,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	defer p.Close(ctx)
 
 	morningPlugin, err := p.Load(ctx, "plugin-morning/morning.wasm")
 	if err != nil {

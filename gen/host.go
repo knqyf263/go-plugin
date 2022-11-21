@@ -146,7 +146,20 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 				runtime: r,
 				config:  config,
 			}, nil
-		}`)
+		}
+	`)
+
+	// Close plugin
+	g.P(fmt.Sprintf(`func (p *%s) Close(ctx %s) (err error) {
+	if r := p.runtime; r != nil {
+		err = r.Close(ctx)
+	}
+	return
+}
+`,
+		pluginName,
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+	))
 
 	// Plugin loading
 	structName := strings.ToLower(service.GoName[:1]) + service.GoName[1:] + "Plugin"
@@ -160,6 +173,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 			return nil, err
 		}`
 	}
+
 	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s) (%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),

@@ -158,7 +158,6 @@ import (
 // main is required for TinyGo to compile to Wasm.
 func main() {
 	greeting.RegisterGreeter(MyPlugin{})
-
 }
 
 type MyPlugin struct{}
@@ -196,6 +195,7 @@ func main() {
 	// Initialize a plugin loader
 	p, err := greeting.NewGreeterPlugin(ctx, greeting.GreeterPluginOption{})
 	if err != nil {...}
+	defer p.Close(ctx)
 
 	// Load a plugin
 	plugin, err := p.Load(ctx, "path/to/plugin.wasm")

@@ -49,6 +49,14 @@ func NewFieldTestPlugin(ctx context.Context, opt FieldTestPluginOption) (*FieldT
 		config:  config,
 	}, nil
 }
+
+func (p *FieldTestPlugin) Close(ctx context.Context) (err error) {
+	if r := p.runtime; r != nil {
+		err = r.Close(ctx)
+	}
+	return
+}
+
 func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

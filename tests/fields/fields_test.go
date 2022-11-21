@@ -14,6 +14,7 @@ func TestFields(t *testing.T) {
 	ctx := context.Background()
 	p, err := proto.NewFieldTestPlugin(ctx, proto.FieldTestPluginOption{})
 	require.NoError(t, err)
+	defer p.Close(ctx)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
 	require.NoError(t, err)

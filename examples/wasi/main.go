@@ -30,6 +30,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	defer p.Close(ctx)
 
 	wasiPlugin, err := p.Load(ctx, "plugin/plugin.wasm")
 	if err != nil {
