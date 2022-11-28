@@ -139,6 +139,7 @@ func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response R
 	dataSize := uint64(len(data))
 
 	var dataPtr uint64
+	// If the input data is not empty, we must allocate the in-Wasm memory to store it, and pass to the plugin.
 	if dataSize != 0 {
 		results, err := p.malloc.Call(ctx, dataSize)
 		if err != nil {
@@ -155,7 +156,7 @@ func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response R
 		}
 	}
 
-	ptrSize, err := p.test.Call(ctx, uint32(dataPtr), dataSize)
+	ptrSize, err := p.test.Call(ctx, dataPtr, dataSize)
 	if err != nil {
 		return response, err
 	}

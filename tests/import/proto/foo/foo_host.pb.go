@@ -140,6 +140,7 @@ func (p *fooPlugin) Hello(ctx context.Context, request Request) (response bar.Re
 	dataSize := uint64(len(data))
 
 	var dataPtr uint64
+	// If the input data is not empty, we must allocate the in-Wasm memory to store it, and pass to the plugin.
 	if dataSize != 0 {
 		results, err := p.malloc.Call(ctx, dataSize)
 		if err != nil {
@@ -156,7 +157,7 @@ func (p *fooPlugin) Hello(ctx context.Context, request Request) (response bar.Re
 		}
 	}
 
-	ptrSize, err := p.hello.Call(ctx, uint32(dataPtr), dataSize)
+	ptrSize, err := p.hello.Call(ctx, dataPtr, dataSize)
 	if err != nil {
 		return response, err
 	}
