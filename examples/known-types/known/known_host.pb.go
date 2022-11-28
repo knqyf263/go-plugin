@@ -137,24 +137,25 @@ func (p *wellKnownPlugin) Diff(ctx context.Context, request DiffRequest) (respon
 		return response, err
 	}
 	dataSize := uint64(len(data))
-	if dataSize == 0 {
-		return response, nil
-	}
-	results, err := p.malloc.Call(ctx, dataSize)
-	if err != nil {
-		return response, err
+
+	var dataPtr uint64
+	if dataSize != 0 {
+		results, err := p.malloc.Call(ctx, dataSize)
+		if err != nil {
+			return response, err
+		}
+		dataPtr = results[0]
+		// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
+		// So, we have to free it when finished
+		defer p.free.Call(ctx, dataPtr)
+
+		// The pointer is a linear memory offset, which is where we write the name.
+		if !p.module.Memory().Write(ctx, uint32(dataPtr), data) {
+			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size(ctx))
+		}
 	}
 
-	dataPtr := results[0]
-	// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
-	// So, we have to free it when finished
-	defer p.free.Call(ctx, dataPtr)
-
-	// The pointer is a linear memory offset, which is where we write the name.
-	if !p.module.Memory().Write(ctx, uint32(dataPtr), data) {
-		return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size(ctx))
-	}
-	ptrSize, err := p.diff.Call(ctx, dataPtr, dataSize)
+	ptrSize, err := p.diff.Call(ctx, uint32(dataPtr), dataSize)
 	if err != nil {
 		return response, err
 	}
