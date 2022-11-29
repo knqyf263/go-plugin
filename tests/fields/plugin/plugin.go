@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"github.com/knqyf263/go-plugin/types/known/emptypb"
 
 	"github.com/knqyf263/go-plugin/tests/fields/proto"
 )
@@ -15,6 +16,10 @@ func main() {
 }
 
 type TestPlugin struct{}
+
+func (p TestPlugin) TestEmptyInput(_ context.Context, _ emptypb.Empty) (proto.TestEmptyInputResponse, error) {
+	return proto.TestEmptyInputResponse{Ok: true}, nil
+}
 
 func (p TestPlugin) Test(_ context.Context, request proto.Request) (proto.Response, error) {
 	return proto.Response{

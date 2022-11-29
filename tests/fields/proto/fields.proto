@@ -1,11 +1,18 @@
 syntax = "proto3";
 package greeting;
 
+import "google/protobuf/empty.proto";
+
 option go_package = "github.com/knqyf263/go-plugin/test/fields/proto";
 
 // go:plugin type=plugin version=1
 service FieldTest {
   rpc Test(Request) returns (Response) {}
+  rpc TestEmptyInput(google.protobuf.Empty) returns (TestEmptyInputResponse) {}
+}
+
+message TestEmptyInputResponse {
+  bool ok = 1;
 }
 
 enum Enum {

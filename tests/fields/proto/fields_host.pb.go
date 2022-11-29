@@ -12,6 +12,7 @@ import (
 	context "context"
 	errors "errors"
 	fmt "fmt"
+	emptypb "github.com/knqyf263/go-plugin/types/known/emptypb"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
@@ -107,6 +108,10 @@ func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTes
 	if test == nil {
 		return nil, errors.New("field_test_test is not exported")
 	}
+	testemptyinput := module.ExportedFunction("field_test_test_empty_input")
+	if testemptyinput == nil {
+		return nil, errors.New("field_test_test_empty_input is not exported")
+	}
 
 	malloc := module.ExportedFunction("malloc")
 	if malloc == nil {
@@ -118,17 +123,19 @@ func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTes
 		return nil, errors.New("free is not exported")
 	}
 	return &fieldTestPlugin{module: module,
-		malloc: malloc,
-		free:   free,
-		test:   test,
+		malloc:         malloc,
+		free:           free,
+		test:           test,
+		testemptyinput: testemptyinput,
 	}, nil
 }
 
 type fieldTestPlugin struct {
-	module api.Module
-	malloc api.Function
-	free   api.Function
-	test   api.Function
+	module         api.Module
+	malloc         api.Function
+	free           api.Function
+	test           api.Function
+	testemptyinput api.Function
 }
 
 func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response Response, err error) {
@@ -157,6 +164,53 @@ func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response R
 	}
 
 	ptrSize, err := p.test.Call(ctx, dataPtr, dataSize)
+	if err != nil {
+		return response, err
+	}
+
+	// Note: This pointer is still owned by TinyGo, so don't try to free it!
+	resPtr := uint32(ptrSize[0] >> 32)
+	resSize := uint32(ptrSize[0])
+
+	// The pointer is a linear memory offset, which is where we write the name.
+	bytes, ok := p.module.Memory().Read(ctx, resPtr, resSize)
+	if !ok {
+		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
+			resPtr, resSize, p.module.Memory().Size(ctx))
+	}
+
+	if err = response.UnmarshalVT(bytes); err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+func (p *fieldTestPlugin) TestEmptyInput(ctx context.Context, request emptypb.Empty) (response TestEmptyInputResponse, err error) {
+	data, err := request.MarshalVT()
+	if err != nil {
+		return response, err
+	}
+	dataSize := uint64(len(data))
+
+	var dataPtr uint64
+	// If the input data is not empty, we must allocate the in-Wasm memory to store it, and pass to the plugin.
+	if dataSize != 0 {
+		results, err := p.malloc.Call(ctx, dataSize)
+		if err != nil {
+			return response, err
+		}
+		dataPtr = results[0]
+		// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
+		// So, we have to free it when finished
+		defer p.free.Call(ctx, dataPtr)
+
+		// The pointer is a linear memory offset, which is where we write the name.
+		if !p.module.Memory().Write(ctx, uint32(dataPtr), data) {
+			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size(ctx))
+		}
+	}
+
+	ptrSize, err := p.testemptyinput.Call(ctx, dataPtr, dataSize)
 	if err != nil {
 		return response, err
 	}
