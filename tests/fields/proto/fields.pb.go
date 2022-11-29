@@ -8,6 +8,7 @@ package proto
 
 import (
 	context "context"
+	emptypb "github.com/knqyf263/go-plugin/types/known/emptypb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
@@ -45,6 +46,25 @@ func (x Enum) Enum() *Enum {
 	p := new(Enum)
 	*p = x
 	return p
+}
+
+type TestEmptyInputResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Ok bool `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+}
+
+func (x *TestEmptyInputResponse) ProtoReflect() protoreflect.Message {
+	panic(`not implemented`)
+}
+
+func (x *TestEmptyInputResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
 }
 
 type Request struct {
@@ -433,4 +453,5 @@ func (x *Response_Nested) GetA() string {
 // go:plugin type=plugin version=1
 type FieldTest interface {
 	Test(context.Context, Request) (Response, error)
+	TestEmptyInput(context.Context, emptypb.Empty) (TestEmptyInputResponse, error)
 }

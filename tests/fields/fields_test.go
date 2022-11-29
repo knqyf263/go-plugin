@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/knqyf263/go-plugin/tests/fields/proto"
+	"github.com/knqyf263/go-plugin/types/known/emptypb"
 )
 
 func TestFields(t *testing.T) {
@@ -18,6 +19,10 @@ func TestFields(t *testing.T) {
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
 	require.NoError(t, err)
+
+	res, err := plugin.TestEmptyInput(ctx, emptypb.Empty{})
+	require.NoError(t, err)
+	require.True(t, res.GetOk())
 
 	got, err := plugin.Test(ctx, proto.Request{
 		A: 1.2,
