@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/knqyf263/go-plugin/types/known/emptypb"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/knqyf263/go-plugin/tests/fields/proto"
+	"github.com/knqyf263/go-plugin/types/known/emptypb"
 )
 
 func TestFields(t *testing.T) {
