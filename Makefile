@@ -1,7 +1,7 @@
 GOPATH := $(shell go env GOPATH)
 GOBIN := $(if $(GOPATH),$(GOPATH)/bin,/usr/local/bin)
 
-go_sources   := $(shell find cmd encoding gen genid version wasm -name "*.go")
+go_sources := $(shell find cmd encoding gen genid version wasm -name "*.go")
 
 .PHONY: build
 build: $(GOBIN)/protoc-gen-go-plugin
@@ -19,7 +19,6 @@ build.tests: $(tinygo_tests:.go=.wasm)
 
 %.wasm: %.go $(GOBIN)/protoc-gen-go-plugin
 	tinygo build -o $@ -scheduler=none --no-debug --target=wasi $<
-
 
 proto_files := $(shell find . -name "*.proto")
 .PHONY: protoc

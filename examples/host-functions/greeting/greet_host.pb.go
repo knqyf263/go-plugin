@@ -51,8 +51,8 @@ func (h _hostFunctions) Instantiate(ctx context.Context, r wazero.Runtime, ns wa
 
 // Sends a HTTP GET request
 
-func (h _hostFunctions) _HttpGet(ctx context.Context, m api.Module, params []uint64) []uint64 {
-	offset, size := uint32(params[0]), uint32(params[1])
+func (h _hostFunctions) _HttpGet(ctx context.Context, m api.Module, stack []uint64) {
+	offset, size := uint32(stack[0]), uint32(stack[1])
 	buf, err := wasm.ReadMemory(ctx, m, offset, size)
 	if err != nil {
 		panic(err)
@@ -75,13 +75,13 @@ func (h _hostFunctions) _HttpGet(ctx context.Context, m api.Module, params []uin
 		panic(err)
 	}
 	ptrLen := (ptr << uint64(32)) | uint64(len(buf))
-	return []uint64{ptrLen}
+	stack[0] = ptrLen
 }
 
 // Shows a log message
 
-func (h _hostFunctions) _Log(ctx context.Context, m api.Module, params []uint64) []uint64 {
-	offset, size := uint32(params[0]), uint32(params[1])
+func (h _hostFunctions) _Log(ctx context.Context, m api.Module, stack []uint64) {
+	offset, size := uint32(stack[0]), uint32(stack[1])
 	buf, err := wasm.ReadMemory(ctx, m, offset, size)
 	if err != nil {
 		panic(err)
@@ -104,7 +104,7 @@ func (h _hostFunctions) _Log(ctx context.Context, m api.Module, params []uint64)
 		panic(err)
 	}
 	ptrLen := (ptr << uint64(32)) | uint64(len(buf))
-	return []uint64{ptrLen}
+	stack[0] = ptrLen
 }
 
 const GreeterPluginAPIVersion = 1

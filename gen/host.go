@@ -69,13 +69,13 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		}`
 	for _, method := range f.hostService.Methods {
 		g.P(method.Comments.Leading, fmt.Sprintf(`
-			func (h %s) _%s(ctx %s, m %s, params []uint64) []uint64 {`,
+			func (h %s) _%s(ctx %s, m %s, stack []uint64) {`,
 			structName,
 			method.GoName,
 			g.QualifiedGoIdent(contextPackage.Ident("Context")),
 			g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module")),
 		))
-		g.P("offset, size := uint32(params[0]), uint32(params[1])")
+		g.P("offset, size := uint32(stack[0]), uint32(stack[1])")
 		g.P("buf, err := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("ReadMemory")), "(ctx, m, offset, size)")
 		g.P(errorHandling)
 
@@ -93,7 +93,7 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		g.P(errorHandling)
 
 		g.P("ptrLen := (ptr << uint64(32)) | uint64(len(buf))")
-		g.P("return []uint64{ptrLen}")
+		g.P("stack[0] = ptrLen")
 		g.P("}")
 	}
 }
