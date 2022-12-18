@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/planetscale/vtprotobuf v0.3.0
 	github.com/stretchr/testify v1.7.1
-	github.com/tetratelabs/wazero v1.0.0-pre.4
+	github.com/tetratelabs/wazero v1.0.0-pre.5
 	google.golang.org/protobuf v1.28.1
 )
 
