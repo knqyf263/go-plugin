@@ -53,7 +53,7 @@ func (h _hostFunctions) Instantiate(ctx context.Context, r wazero.Runtime, ns wa
 
 func (h _hostFunctions) _HttpGet(ctx context.Context, m api.Module, stack []uint64) {
 	offset, size := uint32(stack[0]), uint32(stack[1])
-	buf, err := wasm.ReadMemory(ctx, m, offset, size)
+	buf, err := wasm.ReadMemory(m.Memory(), offset, size)
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +82,7 @@ func (h _hostFunctions) _HttpGet(ctx context.Context, m api.Module, stack []uint
 
 func (h _hostFunctions) _Log(ctx context.Context, m api.Module, stack []uint64) {
 	offset, size := uint32(stack[0]), uint32(stack[1])
-	buf, err := wasm.ReadMemory(ctx, m, offset, size)
+	buf, err := wasm.ReadMemory(m.Memory(), offset, size)
 	if err != nil {
 		panic(err)
 	}
@@ -243,8 +243,8 @@ func (p *greeterPlugin) Greet(ctx context.Context, request GreetRequest) (respon
 		defer p.free.Call(ctx, dataPtr)
 
 		// The pointer is a linear memory offset, which is where we write the name.
-		if !p.module.Memory().Write(ctx, uint32(dataPtr), data) {
-			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size(ctx))
+		if !p.module.Memory().Write(uint32(dataPtr), data) {
+			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
 		}
 	}
 
@@ -258,10 +258,10 @@ func (p *greeterPlugin) Greet(ctx context.Context, request GreetRequest) (respon
 	resSize := uint32(ptrSize[0])
 
 	// The pointer is a linear memory offset, which is where we write the name.
-	bytes, ok := p.module.Memory().Read(ctx, resPtr, resSize)
+	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
 		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
-			resPtr, resSize, p.module.Memory().Size(ctx))
+			resPtr, resSize, p.module.Memory().Size())
 	}
 
 	if err = response.UnmarshalVT(bytes); err != nil {

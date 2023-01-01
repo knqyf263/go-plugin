@@ -152,8 +152,8 @@ func (p *fooPlugin) Hello(ctx context.Context, request Request) (response bar.Re
 		defer p.free.Call(ctx, dataPtr)
 
 		// The pointer is a linear memory offset, which is where we write the name.
-		if !p.module.Memory().Write(ctx, uint32(dataPtr), data) {
-			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size(ctx))
+		if !p.module.Memory().Write(uint32(dataPtr), data) {
+			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
 		}
 	}
 
@@ -167,10 +167,10 @@ func (p *fooPlugin) Hello(ctx context.Context, request Request) (response bar.Re
 	resSize := uint32(ptrSize[0])
 
 	// The pointer is a linear memory offset, which is where we write the name.
-	bytes, ok := p.module.Memory().Read(ctx, resPtr, resSize)
+	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
 		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
-			resPtr, resSize, p.module.Memory().Size(ctx))
+			resPtr, resSize, p.module.Memory().Size())
 	}
 
 	if err = response.UnmarshalVT(bytes); err != nil {
