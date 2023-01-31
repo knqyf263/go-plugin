@@ -48,7 +48,7 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 	// Define exporting functions
 	g.P(fmt.Sprintf(`
 		// Instantiate a Go-defined module named "env" that exports host functions.
-		func (h %s) Instantiate(ctx context.Context, r wazero.Runtime, ns wazero.Namespace) error {
+		func (h %s) Instantiate(ctx context.Context, r wazero.Runtime) error {
 			envBuilder := r.NewHostModuleBuilder("env")`, structName))
 	for _, method := range f.hostService.Methods {
 		g.P(fmt.Sprintf(`
@@ -59,7 +59,7 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			method.GoName, toSnakeCase(method.GoName)))
 	}
 	g.P(`
-			_, err := envBuilder.Instantiate(ctx, ns)
+			_, err := envBuilder.Instantiate(ctx)
 			return err
 		}
 `)
@@ -110,7 +110,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}
 
 		type %s struct {
-			runtime	%s
+			cache   %s
 			config 	%s
 		}`,
 		pluginName,
@@ -118,7 +118,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		g.QualifiedGoIdent(ioPackage.Ident("Writer")),
 		g.QualifiedGoIdent(fsPackage.Ident("FS")),
 		pluginName,
-		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("CompilationCache")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("ModuleConfig")),
 	))
 
@@ -130,20 +130,20 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		pluginName,
 	))
 	g.P(fmt.Sprintf(`
-			// Create a new WebAssembly Runtime.
-			r := %s(ctx)
+			// Create a new WebAssembly CompilationCache.
+			cache := %s()
 		
 			// Combine the above into our baseline config, overriding defaults.
 			config := %s().
 				// By default, I/O streams are discarded and there's no file system.
 				WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
 			`,
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntime")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("NewCompilationCache")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("NewModuleConfig")),
 	))
 
 	g.P("return &", pluginName, `{
-				runtime: r,
+				cache: cache,
 				config:  config,
 			}, nil
 		}
@@ -151,8 +151,8 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 	// Close plugin
 	g.P(fmt.Sprintf(`func (p *%s) Close(ctx %s) (err error) {
-	if r := p.runtime; r != nil {
-		err = r.Close(ctx)
+	if c := p.cache; c != nil {
+		err = c.Close(ctx)
 	}
 	return
 }
@@ -169,7 +169,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		exportHostFunctions = `
 		h := _` + strings.ToLower(f.hostService.GoName[:1]) + f.hostService.GoName[1:] + `{hostFunctions}
 
-		if err := h.Instantiate(ctx, p.runtime, ns); err != nil {
+		if err := h.Instantiate(ctx, r); err != nil {
 			return nil, err
 		}`
 	}
@@ -187,21 +187,21 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}
 
 		// Create an empty namespace so that multiple modules will not conflict
-		ns := p.runtime.NewNamespace(ctx)
+		r := %s(ctx, %s().WithCompilationCache(p.cache))
 		%s
 
-		if _, err = %s(p.runtime).Instantiate(ctx, ns); err != nil {
+		if _, err = %s(r).Instantiate(ctx); err != nil {
 			return nil, err
 		}
 
 		// Compile the WebAssembly module using the default configuration.
-		code, err := p.runtime.CompileModule(ctx, b)
+		code, err := r.CompileModule(ctx, b)
 		if err != nil {
 			return nil, err
 		}
 	
 		// InstantiateModule runs the "_start" function, WASI's "main".
-		module, err := ns.InstantiateModule(ctx, code, p.config)
+		module, err := r.InstantiateModule(ctx, code, p.config)
 		if err != nil {
 			// Note: Most compilers do not exit the module after running "_start",
 			// unless there was an Error. This allows you to call exported functions.
@@ -228,6 +228,8 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}
 `,
 		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeWithConfig")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeConfig")),
 		exportHostFunctions,
 		g.QualifiedGoIdent(wazeroWasiPackage.Ident("NewBuilder")),
 		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
