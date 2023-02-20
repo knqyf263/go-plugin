@@ -87,6 +87,10 @@ func (gg *Generator) newFileInfo(file *protogen.File) *fileInfo {
 			}
 			f.allServices = append(f.allServices, si)
 		}
+		// If host function is defined, at least one plugin service should be present in the proto file.
+		if f.hostService != nil && len(f.pluginServices) == 0 {
+			gg.plugin.Error(errors.New("should be defined at least one type=plugin service"))
+		}
 	}
 	initEnumInfos(f.Enums)
 	initMessageInfos(f.Messages)
