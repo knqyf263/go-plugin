@@ -11,6 +11,7 @@ package proto
 import (
 	context "context"
 	wasm "github.com/knqyf263/go-plugin/wasm"
+	_ "unsafe"
 )
 
 const GreeterPluginAPIVersion = 1
@@ -54,6 +55,7 @@ func NewHostFunctions() HostFunctions {
 
 //go:wasm-module env
 //export parse_json
+//go:linkname _parse_json
 func _parse_json(ptr uint32, size uint32) uint64
 
 func (h hostFunctions) ParseJson(ctx context.Context, request ParseJsonRequest) (response ParseJsonResponse, err error) {
