@@ -58,7 +58,9 @@ func (p *KnownTypesTestPlugin) Close(ctx context.Context) (err error) {
 	return
 }
 
-func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (KnownTypesTest, error) {
+type KnownTypesTestHandlerFn func(ctx context.Context, runtime wazero.Runtime) error
+
+func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string, handlers ...KnownTypesTestHandlerFn) (KnownTypesTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err
@@ -66,6 +68,12 @@ func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (Kno
 
 	// Create an empty namespace so that multiple modules will not conflict
 	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+
+	for _, hf := range handlers {
+		if err := hf(ctx, r); err != nil {
+			return nil, err
+		}
+	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
@@ -216,7 +224,9 @@ func (p *EmptyTestPlugin) Close(ctx context.Context) (err error) {
 	return
 }
 
-func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTest, error) {
+type EmptyTestHandlerFn func(ctx context.Context, runtime wazero.Runtime) error
+
+func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string, handlers ...EmptyTestHandlerFn) (EmptyTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err
@@ -224,6 +234,12 @@ func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTes
 
 	// Create an empty namespace so that multiple modules will not conflict
 	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+
+	for _, hf := range handlers {
+		if err := hf(ctx, r); err != nil {
+			return nil, err
+		}
+	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err

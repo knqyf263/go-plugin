@@ -143,7 +143,9 @@ func (p *GreeterPlugin) Close(ctx context.Context) (err error) {
 	return
 }
 
-func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctions HostFunctions) (Greeter, error) {
+type GreeterHandlerFn func(ctx context.Context, runtime wazero.Runtime) error
+
+func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctions HostFunctions, handlers ...GreeterHandlerFn) (Greeter, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err
@@ -156,6 +158,12 @@ func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctio
 
 	if err := h.Instantiate(ctx, r); err != nil {
 		return nil, err
+	}
+
+	for _, hf := range handlers {
+		if err := hf(ctx, r); err != nil {
+			return nil, err
+		}
 	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {

@@ -58,7 +58,9 @@ func (p *FieldTestPlugin) Close(ctx context.Context) (err error) {
 	return
 }
 
-func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTest, error) {
+type FieldTestHandlerFn func(ctx context.Context, runtime wazero.Runtime) error
+
+func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string, handlers ...FieldTestHandlerFn) (FieldTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err
@@ -66,6 +68,12 @@ func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTes
 
 	// Create an empty namespace so that multiple modules will not conflict
 	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+
+	for _, hf := range handlers {
+		if err := hf(ctx, r); err != nil {
+			return nil, err
+		}
+	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err

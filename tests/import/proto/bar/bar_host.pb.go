@@ -57,7 +57,9 @@ func (p *BarPlugin) Close(ctx context.Context) (err error) {
 	return
 }
 
-func (p *BarPlugin) Load(ctx context.Context, pluginPath string) (Bar, error) {
+type BarHandlerFn func(ctx context.Context, runtime wazero.Runtime) error
+
+func (p *BarPlugin) Load(ctx context.Context, pluginPath string, handlers ...BarHandlerFn) (Bar, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err
@@ -65,6 +67,12 @@ func (p *BarPlugin) Load(ctx context.Context, pluginPath string) (Bar, error) {
 
 	// Create an empty namespace so that multiple modules will not conflict
 	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+
+	for _, hf := range handlers {
+		if err := hf(ctx, r); err != nil {
+			return nil, err
+		}
+	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
