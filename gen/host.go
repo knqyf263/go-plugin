@@ -174,7 +174,12 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}`
 	}
 
-	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s) (%s, error) {",
+	g.P(fmt.Sprintf("type HandlerFn func(ctx %s, runtime %s) error",
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
+	))
+
+	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s, handlers ...HandlerFn) (%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		hostFunctionsArg,
@@ -189,6 +194,12 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		// Create an empty namespace so that multiple modules will not conflict
 		r := %s(ctx, %s().WithCompilationCache(p.cache))
 		%s
+
+		for _, hf := range handlers {
+			if err := hf(ctx, r); err != nil {
+				return nil, err
+			}
+		}
 
 		if _, err = %s(r).Instantiate(ctx); err != nil {
 			return nil, err
