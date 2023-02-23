@@ -174,15 +174,17 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}`
 	}
 
-	g.P(fmt.Sprintf("type HandlerFn func(ctx %s, runtime %s) error",
+	g.P(fmt.Sprintf("type %sHandlerFn func(ctx %s, runtime %s) error",
+		service.GoName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
 	))
 
-	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s, handlers ...HandlerFn) (%s, error) {",
+	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s, handlers ...%sHandlerFn) (%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		hostFunctionsArg,
+		service.GoName,
 		service.GoName,
 	))
 
