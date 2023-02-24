@@ -12,7 +12,7 @@ func (gg *Generator) generateHostFile(f *fileInfo) {
 	filename := f.GeneratedFilenamePrefix + "_host.pb.go"
 	g := gg.plugin.NewGeneratedFile(filename, f.GoImportPath)
 
-	if len(f.pluginServices) == 0 {
+	if len(f.pluginServices) == 0 && f.hostService == nil {
 		g.Skip()
 	}
 
