@@ -12,6 +12,7 @@ import (
 	context "context"
 	emptypb "github.com/knqyf263/go-plugin/types/known/emptypb"
 	wasm "github.com/knqyf263/go-plugin/wasm"
+	_ "unsafe"
 )
 
 const GreeterPluginAPIVersion = 1
@@ -55,6 +56,7 @@ func NewHostFunctions() HostFunctions {
 
 //go:wasm-module env
 //export http_get
+//go:linkname _http_get
 func _http_get(ptr uint32, size uint32) uint64
 
 func (h hostFunctions) HttpGet(ctx context.Context, request HttpGetRequest) (response HttpGetResponse, err error) {
@@ -77,6 +79,7 @@ func (h hostFunctions) HttpGet(ctx context.Context, request HttpGetRequest) (res
 
 //go:wasm-module env
 //export log
+//go:linkname _log
 func _log(ptr uint32, size uint32) uint64
 
 func (h hostFunctions) Log(ctx context.Context, request LogRequest) (response emptypb.Empty, err error) {

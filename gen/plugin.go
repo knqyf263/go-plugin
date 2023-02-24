@@ -84,6 +84,8 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		return
 	}
 
+	g.Import(unsafePackage)
+
 	// Host functions
 	structName := strings.ToLower(f.hostService.GoName[:1]) + f.hostService.GoName[1:]
 	g.P("type ", structName, " struct{}")
@@ -97,6 +99,7 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		g.P(fmt.Sprintf(`
 		//go:wasm-module env
 		//export %s
+		//go:linkname _%s
 		func _%s(ptr uint32, size uint32) uint64
 
 		func (h %s) %s(ctx %s, request %s) (response %s, err error) {
@@ -116,7 +119,7 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			}
 			return response, nil
 		}`,
-			importedName, importedName, structName, method.GoName,
+			importedName, importedName, importedName, structName, method.GoName,
 			g.QualifiedGoIdent(contextPackage.Ident("Context")),
 			g.QualifiedGoIdent(method.Input.GoIdent),
 			g.QualifiedGoIdent(method.Output.GoIdent),
