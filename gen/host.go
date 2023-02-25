@@ -46,13 +46,27 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		`, structName, f.hostService.GoName))
 
 	// Define exporting functions
-	g.P(fmt.Sprintf(`
+	// If it is only distributable host-functions, i.e. there is no plugin service definition
+	if len(f.pluginServices) == 0 {
+		g.P(fmt.Sprintf(`
+		// Instantiate a Go-defined module named "env" that exports host functions.
+		func Instantiate(ctx %s, r %s, hostFunctions %s) error {
+			envBuilder := r.NewHostModuleBuilder("env")
+			h := %s{hostFunctions}`,
+			g.QualifiedGoIdent(contextPackage.Ident("Context")),
+			g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
+			f.hostService.GoName,
+			structName))
+	} else {
+		g.P(fmt.Sprintf(`
 		// Instantiate a Go-defined module named "env" that exports host functions.
 		func (h %s) Instantiate(ctx %s, r %s) error {
 			envBuilder := r.NewHostModuleBuilder("env")`,
-		structName,
-		g.QualifiedGoIdent(contextPackage.Ident("Context")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime"))))
+			structName,
+			g.QualifiedGoIdent(contextPackage.Ident("Context")),
+			g.QualifiedGoIdent(wazeroPackage.Ident("Runtime"))))
+	}
+
 	for _, method := range f.hostService.Methods {
 		g.P(fmt.Sprintf(`
 			envBuilder.NewFunctionBuilder().
