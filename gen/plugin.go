@@ -97,7 +97,7 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 	for _, method := range f.hostService.Methods {
 		importedName := toSnakeCase(method.GoName)
 		g.P(fmt.Sprintf(`
-		//go:wasm-module env
+		//go:wasm-module %s
 		//export %s
 		//go:linkname _%s
 		func _%s(ptr uint32, size uint32) uint64
@@ -119,7 +119,7 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			}
 			return response, nil
 		}`,
-			importedName, importedName, importedName, structName, method.GoName,
+			f.hostService.Module, importedName, importedName, importedName, structName, method.GoName,
 			g.QualifiedGoIdent(contextPackage.Ident("Context")),
 			g.QualifiedGoIdent(method.Input.GoIdent),
 			g.QualifiedGoIdent(method.Output.GoIdent),
