@@ -167,8 +167,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		pluginName,
 		pluginName,
 	))
-	g.P(fmt.Sprintf(`
-			cache := %s()
+	g.P(fmt.Sprintf(`cache := %s()
 			o := &%s{
 				newRuntime: func(ctx %s) (%s, error) {
 					return %s(ctx, %s().WithCompilationCache(cache)), nil

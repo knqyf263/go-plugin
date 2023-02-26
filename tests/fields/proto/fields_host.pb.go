@@ -50,7 +50,6 @@ func FieldTestPluginCache(cache wazero.CompilationCache) FieldTestPluginOption {
 	}
 }
 func NewFieldTestPlugin(ctx context.Context, opts ...FieldTestPluginOption) (*FieldTestPlugin, error) {
-
 	cache := wazero.NewCompilationCache()
 	o := &FieldTestPlugin{
 		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {

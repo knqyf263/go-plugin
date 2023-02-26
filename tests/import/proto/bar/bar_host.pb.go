@@ -49,7 +49,6 @@ func BarPluginCache(cache wazero.CompilationCache) BarPluginOption {
 	}
 }
 func NewBarPlugin(ctx context.Context, opts ...BarPluginOption) (*BarPlugin, error) {
-
 	cache := wazero.NewCompilationCache()
 	o := &BarPlugin{
 		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {

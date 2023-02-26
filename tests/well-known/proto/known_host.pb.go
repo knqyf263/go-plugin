@@ -50,7 +50,6 @@ func KnownTypesTestPluginCache(cache wazero.CompilationCache) KnownTypesTestPlug
 	}
 }
 func NewKnownTypesTestPlugin(ctx context.Context, opts ...KnownTypesTestPluginOption) (*KnownTypesTestPlugin, error) {
-
 	cache := wazero.NewCompilationCache()
 	o := &KnownTypesTestPlugin{
 		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
@@ -237,7 +236,6 @@ func EmptyTestPluginCache(cache wazero.CompilationCache) EmptyTestPluginOption {
 	}
 }
 func NewEmptyTestPlugin(ctx context.Context, opts ...EmptyTestPluginOption) (*EmptyTestPlugin, error) {
-
 	cache := wazero.NewCompilationCache()
 	o := &EmptyTestPlugin{
 		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {

@@ -49,7 +49,6 @@ func GreeterPluginCache(cache wazero.CompilationCache) GreeterPluginOption {
 	}
 }
 func NewGreeterPlugin(ctx context.Context, opts ...GreeterPluginOption) (*GreeterPlugin, error) {
-
 	cache := wazero.NewCompilationCache()
 	o := &GreeterPlugin{
 		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {

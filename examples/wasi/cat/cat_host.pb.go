@@ -49,7 +49,6 @@ func FileCatPluginCache(cache wazero.CompilationCache) FileCatPluginOption {
 	}
 }
 func NewFileCatPlugin(ctx context.Context, opts ...FileCatPluginOption) (*FileCatPlugin, error) {
-
 	cache := wazero.NewCompilationCache()
 	o := &FileCatPlugin{
 		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {

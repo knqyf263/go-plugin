@@ -49,7 +49,6 @@ func WellKnownPluginCache(cache wazero.CompilationCache) WellKnownPluginOption {
 	}
 }
 func NewWellKnownPlugin(ctx context.Context, opts ...WellKnownPluginOption) (*WellKnownPlugin, error) {
-
 	cache := wazero.NewCompilationCache()
 	o := &WellKnownPlugin{
 		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {

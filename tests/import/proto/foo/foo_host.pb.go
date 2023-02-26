@@ -50,7 +50,6 @@ func FooPluginCache(cache wazero.CompilationCache) FooPluginOption {
 	}
 }
 func NewFooPlugin(ctx context.Context, opts ...FooPluginOption) (*FooPlugin, error) {
-
 	cache := wazero.NewCompilationCache()
 	o := &FooPlugin{
 		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
