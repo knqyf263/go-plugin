@@ -67,7 +67,7 @@ Pass it to a plugin in `Load()`.
 
 ```go
 // Pass my host functions that are embedded into the plugin.
-greetingPlugin, err := p.Load(ctx, "plugin/plugin.wasm", myHostFunctions{})
+greetingPlugin, err := p.Load(ctx, "plugin/plugin.wasm")
 ```
 
 ## Call host functions in a plugin

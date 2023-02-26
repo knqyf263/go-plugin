@@ -19,14 +19,14 @@ func main() {
 
 func run() error {
 	ctx := context.Background()
-	p, err := greeting.NewGreeterPlugin(ctx, greeting.GreeterPluginOption{})
+	p, err := greeting.NewGreeterPlugin(ctx)
 	if err != nil {
 		return err
 	}
-	defer p.Close(ctx)
 
 	// Pass my host functions that are embedded into the plugin.
 	greetingPlugin, err := p.Load(ctx, "plugin/plugin.wasm", myHostFunctions{})
+	defer greetingPlugin.Close(ctx)
 	if err != nil {
 		return err
 	}

@@ -18,11 +18,11 @@ import (
 
 func TestWellKnownTypes(t *testing.T) {
 	ctx := context.Background()
-	p, err := proto.NewKnownTypesTestPlugin(ctx, proto.KnownTypesTestPluginOption{})
+	p, err := proto.NewKnownTypesTestPlugin(ctx)
 	require.NoError(t, err)
-	defer p.Close(ctx)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
+	defer plugin.Close(ctx)
 	require.NoError(t, err)
 
 	b := time.Date(2022, 1, 2, 3, 4, 5, 6, time.UTC)
@@ -102,7 +102,7 @@ func TestWellKnownTypes(t *testing.T) {
 
 func TestEmpty(t *testing.T) {
 	ctx := context.Background()
-	p, err := proto.NewEmptyTestPlugin(ctx, proto.EmptyTestPluginOption{})
+	p, err := proto.NewEmptyTestPlugin(ctx)
 	require.NoError(t, err)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")

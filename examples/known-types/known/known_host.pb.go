@@ -16,55 +16,50 @@ import (
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	sys "github.com/tetratelabs/wazero/sys"
-	io "io"
-	fs "io/fs"
 	os "os"
 )
 
 const WellKnownPluginAPIVersion = 1
 
-type WellKnownPluginOption struct {
-	Stdout io.Writer
-	Stderr io.Writer
-	FS     fs.FS
-}
-
 type WellKnownPlugin struct {
-	cache  wazero.CompilationCache
-	config wazero.ModuleConfig
+	newRuntime   func(context.Context) (wazero.Runtime, error)
+	moduleConfig wazero.ModuleConfig
 }
 
-func NewWellKnownPlugin(ctx context.Context, opt WellKnownPluginOption) (*WellKnownPlugin, error) {
+func NewWellKnownPlugin(ctx context.Context, opts ...wazeroConfigOption) (*WellKnownPlugin, error) {
+	o := &WazeroConfig{
+		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
+			return wazero.NewRuntime(ctx), nil
+		},
+		moduleConfig: wazero.NewModuleConfig(),
+	}
 
-	// Create a new WebAssembly CompilationCache.
-	cache := wazero.NewCompilationCache()
-
-	// Combine the above into our baseline config, overriding defaults.
-	config := wazero.NewModuleConfig().
-		// By default, I/O streams are discarded and there's no file system.
-		WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
+	for _, opt := range opts {
+		opt(o)
+	}
 
 	return &WellKnownPlugin{
-		cache:  cache,
-		config: config,
+		newRuntime:   o.newRuntime,
+		moduleConfig: o.moduleConfig,
 	}, nil
 }
 
-func (p *WellKnownPlugin) Close(ctx context.Context) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
-	return
+type WellKnownInterface interface {
+	Close(ctx context.Context) error
+	WellKnown
 }
 
-func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (WellKnown, error) {
+func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (WellKnownInterface, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create an empty namespace so that multiple modules will not conflict
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+	// Create a new runtime so that multiple modules will not conflict
+	r, err := p.newRuntime(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
@@ -77,7 +72,7 @@ func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (WellKnow
 	}
 
 	// InstantiateModule runs the "_start" function, WASI's "main".
-	module, err := r.InstantiateModule(ctx, code, p.config)
+	module, err := r.InstantiateModule(ctx, code, p.moduleConfig)
 	if err != nil {
 		// Note: Most compilers do not exit the module after running "_start",
 		// unless there was an Error. This allows you to call exported functions.
@@ -117,18 +112,28 @@ func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (WellKnow
 	if free == nil {
 		return nil, errors.New("free is not exported")
 	}
-	return &wellKnownPlugin{module: module,
-		malloc: malloc,
-		free:   free,
-		diff:   diff,
+	return &wellKnownPlugin{
+		runtime: r,
+		module:  module,
+		malloc:  malloc,
+		free:    free,
+		diff:    diff,
 	}, nil
 }
 
+func (p *wellKnownPlugin) Close(ctx context.Context) (err error) {
+	if r := p.runtime; r != nil {
+		r.Close(ctx)
+	}
+	return
+}
+
 type wellKnownPlugin struct {
-	module api.Module
-	malloc api.Function
-	free   api.Function
-	diff   api.Function
+	runtime wazero.Runtime
+	module  api.Module
+	malloc  api.Function
+	free    api.Function
+	diff    api.Function
 }
 
 func (p *wellKnownPlugin) Diff(ctx context.Context, request DiffRequest) (response DiffReply, err error) {

@@ -8,18 +8,20 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tetratelabs/wazero"
 
 	"github.com/knqyf263/go-plugin/tests/host-functions/proto"
 )
 
 func TestHostFunctions(t *testing.T) {
 	ctx := context.Background()
-	p, err := proto.NewGreeterPlugin(ctx, proto.GreeterPluginOption{Stdout: os.Stdout})
+	mc := wazero.NewModuleConfig().WithStdout(os.Stdout)
+	p, err := proto.NewGreeterPlugin(ctx, proto.WazeroModuleConfig(mc))
 	require.NoError(t, err)
-	defer p.Close(ctx)
 
 	// Pass my host functions that are embedded into the plugin.
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm", myHostFunctions{})
+	defer plugin.Close(ctx)
 	require.NoError(t, err)
 
 	reply, err := plugin.Greet(ctx, proto.GreetRequest{

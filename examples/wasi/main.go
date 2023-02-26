@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/tetratelabs/wazero"
+
 	"github.com/knqyf263/go-plugin/examples/wasi/cat"
 )
 
@@ -22,17 +24,17 @@ func main() {
 
 func run() error {
 	ctx := context.Background()
-	p, err := cat.NewFileCatPlugin(ctx, cat.FileCatPluginOption{
-		Stdout: os.Stdout, // Attach stdout so that the plugin can write outputs to stdout
-		Stderr: os.Stderr, // Attach stderr so that the plugin can write errors to stderr
-		FS:     f,         // Loaded plugins can access only files that the host allows.
-	})
+	mc := wazero.NewModuleConfig().
+		WithStdout(os.Stdout). // Attach stdout so that the plugin can write outputs to stdout
+		WithStderr(os.Stderr). // Attach stderr so that the plugin can write errors to stderr
+		WithFS(f)              // Loaded plugins can access only files that the host allows.
+	p, err := cat.NewFileCatPlugin(ctx, cat.WazeroModuleConfig(mc))
 	if err != nil {
 		return err
 	}
-	defer p.Close(ctx)
 
 	wasiPlugin, err := p.Load(ctx, "plugin/plugin.wasm")
+	defer wasiPlugin.Close(ctx)
 	if err != nil {
 		return err
 	}
