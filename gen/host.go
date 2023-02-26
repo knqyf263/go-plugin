@@ -161,7 +161,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	}
 
 	g.P(fmt.Sprintf(
-		"func New%s(ctx %s, opt ...%sOption) (*%s, error) {",
+		"func New%s(ctx %s, opts ...%sOption) (*%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		pluginName,
