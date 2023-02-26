@@ -16,40 +16,55 @@ import (
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	sys "github.com/tetratelabs/wazero/sys"
-	io "io"
-	fs "io/fs"
 	os "os"
 )
 
 const FileCatPluginAPIVersion = 1
 
-type FileCatPluginOption struct {
-	Stdout io.Writer
-	Stderr io.Writer
-	FS     fs.FS
-}
+type FileCatPluginOption func(plugin *FileCatPlugin)
 
 type FileCatPlugin struct {
-	cache  wazero.CompilationCache
-	config wazero.ModuleConfig
+	newRuntime   func(context.Context) (wazero.Runtime, error)
+	cache        wazero.CompilationCache
+	moduleConfig wazero.ModuleConfig
 }
 
-func NewFileCatPlugin(ctx context.Context, opt FileCatPluginOption) (*FileCatPlugin, error) {
+type FileCatPluginNewRuntime func(context.Context) (wazero.Runtime, error)
 
-	// Create a new WebAssembly CompilationCache.
+func FileCatPluginRuntime(newRuntime FileCatPluginNewRuntime) FileCatPluginOption {
+	return func(h *FileCatPlugin) {
+		h.newRuntime = newRuntime
+	}
+}
+
+func FileCatPluginModuleConfig(moduleConfig wazero.ModuleConfig) FileCatPluginOption {
+	return func(h *FileCatPlugin) {
+		h.moduleConfig = moduleConfig
+	}
+}
+
+func FileCatPluginCache(cache wazero.CompilationCache) FileCatPluginOption {
+	return func(h *FileCatPlugin) {
+		h.cache = cache
+	}
+}
+func NewFileCatPlugin(ctx context.Context, opts ...FileCatPluginOption) (*FileCatPlugin, error) {
+
 	cache := wazero.NewCompilationCache()
+	o := &FileCatPlugin{
+		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
+			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
+		},
+		cache:        cache,
+		moduleConfig: wazero.NewModuleConfig(),
+	}
 
-	// Combine the above into our baseline config, overriding defaults.
-	config := wazero.NewModuleConfig().
-		// By default, I/O streams are discarded and there's no file system.
-		WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
+	for _, opt := range opts {
+		opt(o)
+	}
 
-	return &FileCatPlugin{
-		cache:  cache,
-		config: config,
-	}, nil
+	return o, nil
 }
-
 func (p *FileCatPlugin) Close(ctx context.Context) (err error) {
 	if c := p.cache; c != nil {
 		err = c.Close(ctx)
@@ -63,8 +78,11 @@ func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (FileCat, e
 		return nil, err
 	}
 
-	// Create an empty namespace so that multiple modules will not conflict
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+	// Create a new runtime so that multiple modules will not conflict
+	r, err := p.newRuntime(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
@@ -77,7 +95,7 @@ func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (FileCat, e
 	}
 
 	// InstantiateModule runs the "_start" function, WASI's "main".
-	module, err := r.InstantiateModule(ctx, code, p.config)
+	module, err := r.InstantiateModule(ctx, code, p.moduleConfig)
 	if err != nil {
 		// Note: Most compilers do not exit the module after running "_start",
 		// unless there was an Error. This allows you to call exported functions.

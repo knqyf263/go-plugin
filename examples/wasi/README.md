@@ -17,11 +17,11 @@ var f embed.FS
 
 func run() error {
         ctx := context.Background()
-        p, err := cat.NewFileCatPlugin(ctx, cat.FileCatPluginOption{
-                Stdout: os.Stdout, // Attach stdout so that the plugin can write outputs to stdout
-                Stderr: os.Stderr, // Attach stderr so that the plugin can write errors to stderr
-                FS:     f,         // Loaded plugins can access only files that the host allows.
-        })
+		mc := wazero.NewModuleConfig().
+            WithStdout(os.Stdout). // Attach stdout so that the plugin can write outputs to stdout
+            WithStderr(os.Stderr). // Attach stderr so that the plugin can write errors to stderr
+            WithFS(f)              // Loaded plugins can access only files that the host allows.
+        p, err := cat.NewFileCatPlugin(ctx, cat.FileCatPluginModuleConfig(mc))
 ```
 
 In this example, the host just passes `testdata/hello.txt` via `FileCatPluginOption`, but you can pass whatever you want.

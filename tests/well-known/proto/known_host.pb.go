@@ -17,40 +17,55 @@ import (
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	sys "github.com/tetratelabs/wazero/sys"
-	io "io"
-	fs "io/fs"
 	os "os"
 )
 
 const KnownTypesTestPluginAPIVersion = 1
 
-type KnownTypesTestPluginOption struct {
-	Stdout io.Writer
-	Stderr io.Writer
-	FS     fs.FS
-}
+type KnownTypesTestPluginOption func(plugin *KnownTypesTestPlugin)
 
 type KnownTypesTestPlugin struct {
-	cache  wazero.CompilationCache
-	config wazero.ModuleConfig
+	newRuntime   func(context.Context) (wazero.Runtime, error)
+	cache        wazero.CompilationCache
+	moduleConfig wazero.ModuleConfig
 }
 
-func NewKnownTypesTestPlugin(ctx context.Context, opt KnownTypesTestPluginOption) (*KnownTypesTestPlugin, error) {
+type KnownTypesTestPluginNewRuntime func(context.Context) (wazero.Runtime, error)
 
-	// Create a new WebAssembly CompilationCache.
+func KnownTypesTestPluginRuntime(newRuntime KnownTypesTestPluginNewRuntime) KnownTypesTestPluginOption {
+	return func(h *KnownTypesTestPlugin) {
+		h.newRuntime = newRuntime
+	}
+}
+
+func KnownTypesTestPluginModuleConfig(moduleConfig wazero.ModuleConfig) KnownTypesTestPluginOption {
+	return func(h *KnownTypesTestPlugin) {
+		h.moduleConfig = moduleConfig
+	}
+}
+
+func KnownTypesTestPluginCache(cache wazero.CompilationCache) KnownTypesTestPluginOption {
+	return func(h *KnownTypesTestPlugin) {
+		h.cache = cache
+	}
+}
+func NewKnownTypesTestPlugin(ctx context.Context, opts ...KnownTypesTestPluginOption) (*KnownTypesTestPlugin, error) {
+
 	cache := wazero.NewCompilationCache()
+	o := &KnownTypesTestPlugin{
+		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
+			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
+		},
+		cache:        cache,
+		moduleConfig: wazero.NewModuleConfig(),
+	}
 
-	// Combine the above into our baseline config, overriding defaults.
-	config := wazero.NewModuleConfig().
-		// By default, I/O streams are discarded and there's no file system.
-		WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
+	for _, opt := range opts {
+		opt(o)
+	}
 
-	return &KnownTypesTestPlugin{
-		cache:  cache,
-		config: config,
-	}, nil
+	return o, nil
 }
-
 func (p *KnownTypesTestPlugin) Close(ctx context.Context) (err error) {
 	if c := p.cache; c != nil {
 		err = c.Close(ctx)
@@ -64,8 +79,11 @@ func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (Kno
 		return nil, err
 	}
 
-	// Create an empty namespace so that multiple modules will not conflict
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+	// Create a new runtime so that multiple modules will not conflict
+	r, err := p.newRuntime(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
@@ -78,7 +96,7 @@ func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (Kno
 	}
 
 	// InstantiateModule runs the "_start" function, WASI's "main".
-	module, err := r.InstantiateModule(ctx, code, p.config)
+	module, err := r.InstantiateModule(ctx, code, p.moduleConfig)
 	if err != nil {
 		// Note: Most compilers do not exit the module after running "_start",
 		// unless there was an Error. This allows you to call exported functions.
@@ -191,33 +209,50 @@ func (p *knownTypesTestPlugin) Test(ctx context.Context, request Request) (respo
 
 const EmptyTestPluginAPIVersion = 1
 
-type EmptyTestPluginOption struct {
-	Stdout io.Writer
-	Stderr io.Writer
-	FS     fs.FS
-}
+type EmptyTestPluginOption func(plugin *EmptyTestPlugin)
 
 type EmptyTestPlugin struct {
-	cache  wazero.CompilationCache
-	config wazero.ModuleConfig
+	newRuntime   func(context.Context) (wazero.Runtime, error)
+	cache        wazero.CompilationCache
+	moduleConfig wazero.ModuleConfig
 }
 
-func NewEmptyTestPlugin(ctx context.Context, opt EmptyTestPluginOption) (*EmptyTestPlugin, error) {
+type EmptyTestPluginNewRuntime func(context.Context) (wazero.Runtime, error)
 
-	// Create a new WebAssembly CompilationCache.
+func EmptyTestPluginRuntime(newRuntime EmptyTestPluginNewRuntime) EmptyTestPluginOption {
+	return func(h *EmptyTestPlugin) {
+		h.newRuntime = newRuntime
+	}
+}
+
+func EmptyTestPluginModuleConfig(moduleConfig wazero.ModuleConfig) EmptyTestPluginOption {
+	return func(h *EmptyTestPlugin) {
+		h.moduleConfig = moduleConfig
+	}
+}
+
+func EmptyTestPluginCache(cache wazero.CompilationCache) EmptyTestPluginOption {
+	return func(h *EmptyTestPlugin) {
+		h.cache = cache
+	}
+}
+func NewEmptyTestPlugin(ctx context.Context, opts ...EmptyTestPluginOption) (*EmptyTestPlugin, error) {
+
 	cache := wazero.NewCompilationCache()
+	o := &EmptyTestPlugin{
+		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
+			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
+		},
+		cache:        cache,
+		moduleConfig: wazero.NewModuleConfig(),
+	}
 
-	// Combine the above into our baseline config, overriding defaults.
-	config := wazero.NewModuleConfig().
-		// By default, I/O streams are discarded and there's no file system.
-		WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
+	for _, opt := range opts {
+		opt(o)
+	}
 
-	return &EmptyTestPlugin{
-		cache:  cache,
-		config: config,
-	}, nil
+	return o, nil
 }
-
 func (p *EmptyTestPlugin) Close(ctx context.Context) (err error) {
 	if c := p.cache; c != nil {
 		err = c.Close(ctx)
@@ -231,8 +266,11 @@ func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTes
 		return nil, err
 	}
 
-	// Create an empty namespace so that multiple modules will not conflict
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+	// Create a new runtime so that multiple modules will not conflict
+	r, err := p.newRuntime(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
@@ -245,7 +283,7 @@ func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTes
 	}
 
 	// InstantiateModule runs the "_start" function, WASI's "main".
-	module, err := r.InstantiateModule(ctx, code, p.config)
+	module, err := r.InstantiateModule(ctx, code, p.moduleConfig)
 	if err != nil {
 		// Note: Most compilers do not exit the module after running "_start",
 		// unless there was an Error. This allows you to call exported functions.

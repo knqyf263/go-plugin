@@ -17,40 +17,55 @@ import (
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	sys "github.com/tetratelabs/wazero/sys"
-	io "io"
-	fs "io/fs"
 	os "os"
 )
 
 const FieldTestPluginAPIVersion = 1
 
-type FieldTestPluginOption struct {
-	Stdout io.Writer
-	Stderr io.Writer
-	FS     fs.FS
-}
+type FieldTestPluginOption func(plugin *FieldTestPlugin)
 
 type FieldTestPlugin struct {
-	cache  wazero.CompilationCache
-	config wazero.ModuleConfig
+	newRuntime   func(context.Context) (wazero.Runtime, error)
+	cache        wazero.CompilationCache
+	moduleConfig wazero.ModuleConfig
 }
 
-func NewFieldTestPlugin(ctx context.Context, opt FieldTestPluginOption) (*FieldTestPlugin, error) {
+type FieldTestPluginNewRuntime func(context.Context) (wazero.Runtime, error)
 
-	// Create a new WebAssembly CompilationCache.
+func FieldTestPluginRuntime(newRuntime FieldTestPluginNewRuntime) FieldTestPluginOption {
+	return func(h *FieldTestPlugin) {
+		h.newRuntime = newRuntime
+	}
+}
+
+func FieldTestPluginModuleConfig(moduleConfig wazero.ModuleConfig) FieldTestPluginOption {
+	return func(h *FieldTestPlugin) {
+		h.moduleConfig = moduleConfig
+	}
+}
+
+func FieldTestPluginCache(cache wazero.CompilationCache) FieldTestPluginOption {
+	return func(h *FieldTestPlugin) {
+		h.cache = cache
+	}
+}
+func NewFieldTestPlugin(ctx context.Context, opts ...FieldTestPluginOption) (*FieldTestPlugin, error) {
+
 	cache := wazero.NewCompilationCache()
+	o := &FieldTestPlugin{
+		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
+			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
+		},
+		cache:        cache,
+		moduleConfig: wazero.NewModuleConfig(),
+	}
 
-	// Combine the above into our baseline config, overriding defaults.
-	config := wazero.NewModuleConfig().
-		// By default, I/O streams are discarded and there's no file system.
-		WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
+	for _, opt := range opts {
+		opt(o)
+	}
 
-	return &FieldTestPlugin{
-		cache:  cache,
-		config: config,
-	}, nil
+	return o, nil
 }
-
 func (p *FieldTestPlugin) Close(ctx context.Context) (err error) {
 	if c := p.cache; c != nil {
 		err = c.Close(ctx)
@@ -64,8 +79,11 @@ func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTes
 		return nil, err
 	}
 
-	// Create an empty namespace so that multiple modules will not conflict
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+	// Create a new runtime so that multiple modules will not conflict
+	r, err := p.newRuntime(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
@@ -78,7 +96,7 @@ func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTes
 	}
 
 	// InstantiateModule runs the "_start" function, WASI's "main".
-	module, err := r.InstantiateModule(ctx, code, p.config)
+	module, err := r.InstantiateModule(ctx, code, p.moduleConfig)
 	if err != nil {
 		// Note: Most compilers do not exit the module after running "_start",
 		// unless there was an Error. This allows you to call exported functions.

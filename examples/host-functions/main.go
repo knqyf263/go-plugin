@@ -19,7 +19,7 @@ func main() {
 
 func run() error {
 	ctx := context.Background()
-	p, err := greeting.NewGreeterPlugin(ctx, greeting.GreeterPluginOption{})
+	p, err := greeting.NewGreeterPlugin(ctx)
 	if err != nil {
 		return err
 	}

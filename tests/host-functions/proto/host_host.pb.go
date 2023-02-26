@@ -17,8 +17,6 @@ import (
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	sys "github.com/tetratelabs/wazero/sys"
-	io "io"
-	fs "io/fs"
 	os "os"
 )
 
@@ -73,33 +71,50 @@ func (h _hostFunctions) _ParseJson(ctx context.Context, m api.Module, stack []ui
 
 const GreeterPluginAPIVersion = 1
 
-type GreeterPluginOption struct {
-	Stdout io.Writer
-	Stderr io.Writer
-	FS     fs.FS
-}
+type GreeterPluginOption func(plugin *GreeterPlugin)
 
 type GreeterPlugin struct {
-	cache  wazero.CompilationCache
-	config wazero.ModuleConfig
+	newRuntime   func(context.Context) (wazero.Runtime, error)
+	cache        wazero.CompilationCache
+	moduleConfig wazero.ModuleConfig
 }
 
-func NewGreeterPlugin(ctx context.Context, opt GreeterPluginOption) (*GreeterPlugin, error) {
+type GreeterPluginNewRuntime func(context.Context) (wazero.Runtime, error)
 
-	// Create a new WebAssembly CompilationCache.
+func GreeterPluginRuntime(newRuntime GreeterPluginNewRuntime) GreeterPluginOption {
+	return func(h *GreeterPlugin) {
+		h.newRuntime = newRuntime
+	}
+}
+
+func GreeterPluginModuleConfig(moduleConfig wazero.ModuleConfig) GreeterPluginOption {
+	return func(h *GreeterPlugin) {
+		h.moduleConfig = moduleConfig
+	}
+}
+
+func GreeterPluginCache(cache wazero.CompilationCache) GreeterPluginOption {
+	return func(h *GreeterPlugin) {
+		h.cache = cache
+	}
+}
+func NewGreeterPlugin(ctx context.Context, opts ...GreeterPluginOption) (*GreeterPlugin, error) {
+
 	cache := wazero.NewCompilationCache()
+	o := &GreeterPlugin{
+		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
+			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
+		},
+		cache:        cache,
+		moduleConfig: wazero.NewModuleConfig(),
+	}
 
-	// Combine the above into our baseline config, overriding defaults.
-	config := wazero.NewModuleConfig().
-		// By default, I/O streams are discarded and there's no file system.
-		WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
+	for _, opt := range opts {
+		opt(o)
+	}
 
-	return &GreeterPlugin{
-		cache:  cache,
-		config: config,
-	}, nil
+	return o, nil
 }
-
 func (p *GreeterPlugin) Close(ctx context.Context) (err error) {
 	if c := p.cache; c != nil {
 		err = c.Close(ctx)
@@ -113,8 +128,11 @@ func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctio
 		return nil, err
 	}
 
-	// Create an empty namespace so that multiple modules will not conflict
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(p.cache))
+	// Create a new runtime so that multiple modules will not conflict
+	r, err := p.newRuntime(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	h := _hostFunctions{hostFunctions}
 
@@ -133,7 +151,7 @@ func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string, hostFunctio
 	}
 
 	// InstantiateModule runs the "_start" function, WASI's "main".
-	module, err := r.InstantiateModule(ctx, code, p.config)
+	module, err := r.InstantiateModule(ctx, code, p.moduleConfig)
 	if err != nil {
 		// Note: Most compilers do not exit the module after running "_start",
 		// unless there was an Error. This allows you to call exported functions.

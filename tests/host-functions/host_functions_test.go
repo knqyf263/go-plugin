@@ -8,13 +8,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tetratelabs/wazero"
 
 	"github.com/knqyf263/go-plugin/tests/host-functions/proto"
 )
 
 func TestHostFunctions(t *testing.T) {
 	ctx := context.Background()
-	p, err := proto.NewGreeterPlugin(ctx, proto.GreeterPluginOption{Stdout: os.Stdout})
+	mc := wazero.NewModuleConfig().WithStdout(os.Stdout)
+	p, err := proto.NewGreeterPlugin(ctx, proto.GreeterPluginModuleConfig(mc))
 	require.NoError(t, err)
 	defer p.Close(ctx)
 
