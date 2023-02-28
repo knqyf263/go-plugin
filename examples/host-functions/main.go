@@ -46,6 +46,8 @@ func run() error {
 // myHostFunctions implements greeting.HostFunctions
 type myHostFunctions struct{}
 
+var _ greeting.HostFunctions = (*myHostFunctions)(nil)
+
 // HttpGet is embedded into the plugin and can be called by the plugin.
 func (myHostFunctions) HttpGet(ctx context.Context, request greeting.HttpGetRequest) (greeting.HttpGetResponse, error) {
 	resp, err := http.Get(request.Url)

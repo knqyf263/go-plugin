@@ -4,16 +4,18 @@ package main
 
 import (
 	"context"
-	"github.com/knqyf263/go-plugin/types/known/emptypb"
+	"errors"
 
 	"github.com/knqyf263/go-plugin/tests/fields/proto"
+	"github.com/knqyf263/go-plugin/types/known/emptypb"
 )
 
 // main is required for TinyGo to compile to Wasm.
 func main() {
 	proto.RegisterFieldTest(TestPlugin{})
-
 }
+
+var _ proto.FieldTest = (*TestPlugin)(nil)
 
 type TestPlugin struct{}
 
@@ -55,4 +57,8 @@ func (p TestPlugin) Test(_ context.Context, request proto.Request) (proto.Respon
 		}(),
 		S: request.GetS() + 1,
 	}, nil
+}
+
+func (p TestPlugin) TestError(_ context.Context, _ emptypb.Empty) (proto.Response, error) {
+	return proto.Response{}, errors.New("error from plugin")
 }

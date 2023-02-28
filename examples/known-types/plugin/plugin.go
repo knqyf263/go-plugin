@@ -17,6 +17,8 @@ func main() {
 
 type WellKnownPlugin struct{}
 
+var _ known.WellKnown = (*WellKnownPlugin)(nil)
+
 func (p WellKnownPlugin) Diff(_ context.Context, request known.DiffRequest) (known.DiffReply, error) {
 	value := request.GetValue().AsInterface()
 	if m, ok := value.(map[string]interface{}); ok {

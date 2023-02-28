@@ -256,12 +256,21 @@ func (p *greeterPlugin) Greet(ctx context.Context, request GreetRequest) (respon
 	// Note: This pointer is still owned by TinyGo, so don't try to free it!
 	resPtr := uint32(ptrSize[0] >> 32)
 	resSize := uint32(ptrSize[0])
+	var isErrResponse bool
+	if (resSize & (1 << 31)) > 0 {
+		isErrResponse = true
+		resSize &^= (1 << 31)
+	}
 
 	// The pointer is a linear memory offset, which is where we write the name.
 	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
 		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
 			resPtr, resSize, p.module.Memory().Size())
+	}
+
+	if isErrResponse {
+		return response, errors.New(string(bytes))
 	}
 
 	if err = response.UnmarshalVT(bytes); err != nil {

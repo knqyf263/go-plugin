@@ -13,12 +13,7 @@ import (
 
 func TestFields(t *testing.T) {
 	ctx := context.Background()
-	p, err := proto.NewFieldTestPlugin(ctx, proto.FieldTestPluginOption{})
-	require.NoError(t, err)
-	defer p.Close(ctx)
-
-	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
-	require.NoError(t, err)
+	plugin := loadPlugin(ctx, t)
 
 	res, err := plugin.TestEmptyInput(ctx, emptypb.Empty{})
 	require.NoError(t, err)
@@ -76,4 +71,24 @@ func TestFields(t *testing.T) {
 		S: proto.Enum_B,
 	}
 	assert.Equal(t, want, got)
+}
+
+func TestErrorResponse(t *testing.T) {
+	ctx := context.Background()
+	plugin := loadPlugin(ctx, t)
+
+	_, err := plugin.TestError(ctx, emptypb.Empty{})
+	require.Error(t, err)
+	require.Equal(t, err.Error(), "error from plugin")
+}
+
+func loadPlugin(ctx context.Context, t *testing.T) proto.FieldTest {
+	p, err := proto.NewFieldTestPlugin(ctx, proto.FieldTestPluginOption{})
+	require.NoError(t, err)
+	defer p.Close(ctx)
+
+	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
+	require.NoError(t, err)
+
+	return plugin
 }

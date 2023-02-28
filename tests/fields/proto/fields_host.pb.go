@@ -112,6 +112,10 @@ func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTes
 	if testemptyinput == nil {
 		return nil, errors.New("field_test_test_empty_input is not exported")
 	}
+	testerror := module.ExportedFunction("field_test_test_error")
+	if testerror == nil {
+		return nil, errors.New("field_test_test_error is not exported")
+	}
 
 	malloc := module.ExportedFunction("malloc")
 	if malloc == nil {
@@ -127,6 +131,7 @@ func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTes
 		free:           free,
 		test:           test,
 		testemptyinput: testemptyinput,
+		testerror:      testerror,
 	}, nil
 }
 
@@ -136,6 +141,7 @@ type fieldTestPlugin struct {
 	free           api.Function
 	test           api.Function
 	testemptyinput api.Function
+	testerror      api.Function
 }
 
 func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response Response, err error) {
@@ -171,12 +177,21 @@ func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response R
 	// Note: This pointer is still owned by TinyGo, so don't try to free it!
 	resPtr := uint32(ptrSize[0] >> 32)
 	resSize := uint32(ptrSize[0])
+	var isErrResponse bool
+	if (resSize & (1 << 31)) > 0 {
+		isErrResponse = true
+		resSize &^= (1 << 31)
+	}
 
 	// The pointer is a linear memory offset, which is where we write the name.
 	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
 		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
 			resPtr, resSize, p.module.Memory().Size())
+	}
+
+	if isErrResponse {
+		return response, errors.New(string(bytes))
 	}
 
 	if err = response.UnmarshalVT(bytes); err != nil {
@@ -218,12 +233,77 @@ func (p *fieldTestPlugin) TestEmptyInput(ctx context.Context, request emptypb.Em
 	// Note: This pointer is still owned by TinyGo, so don't try to free it!
 	resPtr := uint32(ptrSize[0] >> 32)
 	resSize := uint32(ptrSize[0])
+	var isErrResponse bool
+	if (resSize & (1 << 31)) > 0 {
+		isErrResponse = true
+		resSize &^= (1 << 31)
+	}
 
 	// The pointer is a linear memory offset, which is where we write the name.
 	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
 		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
 			resPtr, resSize, p.module.Memory().Size())
+	}
+
+	if isErrResponse {
+		return response, errors.New(string(bytes))
+	}
+
+	if err = response.UnmarshalVT(bytes); err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+func (p *fieldTestPlugin) TestError(ctx context.Context, request emptypb.Empty) (response Response, err error) {
+	data, err := request.MarshalVT()
+	if err != nil {
+		return response, err
+	}
+	dataSize := uint64(len(data))
+
+	var dataPtr uint64
+	// If the input data is not empty, we must allocate the in-Wasm memory to store it, and pass to the plugin.
+	if dataSize != 0 {
+		results, err := p.malloc.Call(ctx, dataSize)
+		if err != nil {
+			return response, err
+		}
+		dataPtr = results[0]
+		// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
+		// So, we have to free it when finished
+		defer p.free.Call(ctx, dataPtr)
+
+		// The pointer is a linear memory offset, which is where we write the name.
+		if !p.module.Memory().Write(uint32(dataPtr), data) {
+			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
+		}
+	}
+
+	ptrSize, err := p.testerror.Call(ctx, dataPtr, dataSize)
+	if err != nil {
+		return response, err
+	}
+
+	// Note: This pointer is still owned by TinyGo, so don't try to free it!
+	resPtr := uint32(ptrSize[0] >> 32)
+	resSize := uint32(ptrSize[0])
+	var isErrResponse bool
+	if (resSize & (1 << 31)) > 0 {
+		isErrResponse = true
+		resSize &^= (1 << 31)
+	}
+
+	// The pointer is a linear memory offset, which is where we write the name.
+	bytes, ok := p.module.Memory().Read(resPtr, resSize)
+	if !ok {
+		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
+			resPtr, resSize, p.module.Memory().Size())
+	}
+
+	if isErrResponse {
+		return response, errors.New(string(bytes))
 	}
 
 	if err = response.UnmarshalVT(bytes); err != nil {

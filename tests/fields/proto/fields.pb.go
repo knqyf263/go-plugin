@@ -454,4 +454,5 @@ func (x *Response_Nested) GetA() string {
 type FieldTest interface {
 	Test(context.Context, Request) (Response, error)
 	TestEmptyInput(context.Context, emptypb.Empty) (TestEmptyInputResponse, error)
+	TestError(context.Context, emptypb.Empty) (Response, error)
 }
