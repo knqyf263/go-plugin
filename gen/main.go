@@ -53,6 +53,9 @@ const (
 	timePackage    = protogen.GoImportPath("time")
 
 	knownTypesPrefix = "google.golang.org/protobuf/types/known/"
+
+	// ErrorMaskBit bit values to indicate if there is an error in the returned data.
+	ErrorMaskBit = "(1 << 31)"
 )
 
 // Protobuf library dependencies.
