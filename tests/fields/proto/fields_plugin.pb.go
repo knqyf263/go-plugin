@@ -78,7 +78,7 @@ func _field_test_test_empty_input(ptr, size uint32) uint64 {
 //export field_test_test_error
 func _field_test_test_error(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req emptypb.Empty
+	var req ErrorRequest
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}

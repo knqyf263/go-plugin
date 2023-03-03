@@ -59,6 +59,6 @@ func (p TestPlugin) Test(_ context.Context, request proto.Request) (proto.Respon
 	}, nil
 }
 
-func (p TestPlugin) TestError(_ context.Context, _ emptypb.Empty) (proto.Response, error) {
-	return proto.Response{}, errors.New("error from plugin")
+func (p TestPlugin) TestError(_ context.Context, request proto.ErrorRequest) (proto.Response, error) {
+	return proto.Response{}, errors.New(request.ErrText)
 }

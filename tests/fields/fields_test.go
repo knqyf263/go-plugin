@@ -77,9 +77,22 @@ func TestErrorResponse(t *testing.T) {
 	ctx := context.Background()
 	plugin := loadPlugin(ctx, t)
 
-	_, err := plugin.TestError(ctx, emptypb.Empty{})
-	require.Error(t, err)
-	require.Equal(t, err.Error(), "error from plugin")
+	for _, tt := range []struct {
+		name       string
+		errMessage string
+	}{{
+		"empty",
+		"",
+	}, {
+		"normal",
+		"error from plugin",
+	}} {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := plugin.TestError(ctx, proto.ErrorRequest{ErrText: tt.errMessage})
+			require.Error(t, err)
+			require.Equal(t, err.Error(), tt.errMessage)
+		})
+	}
 }
 
 func loadPlugin(ctx context.Context, t *testing.T) proto.FieldTest {

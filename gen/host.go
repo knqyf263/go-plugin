@@ -331,7 +331,7 @@ func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Me
 			resSize := uint32(ptrSize[0])
 			var isErrResponse bool
 			if (resSize & %s) > 0 {
-			isErrResponse = true
+				isErrResponse = true
 				resSize &^= %s
 			}
 

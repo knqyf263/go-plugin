@@ -412,6 +412,25 @@ func (x *Response) GetS() Enum {
 	return Enum_A
 }
 
+type ErrorRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ErrText string `protobuf:"bytes,1,opt,name=errText,proto3" json:"errText,omitempty"`
+}
+
+func (x *ErrorRequest) ProtoReflect() protoreflect.Message {
+	panic(`not implemented`)
+}
+
+func (x *ErrorRequest) GetErrText() string {
+	if x != nil {
+		return x.ErrText
+	}
+	return ""
+}
+
 type Request_Nested struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -454,5 +473,5 @@ func (x *Response_Nested) GetA() string {
 type FieldTest interface {
 	Test(context.Context, Request) (Response, error)
 	TestEmptyInput(context.Context, emptypb.Empty) (TestEmptyInputResponse, error)
-	TestError(context.Context, emptypb.Empty) (Response, error)
+	TestError(context.Context, ErrorRequest) (Response, error)
 }

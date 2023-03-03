@@ -256,7 +256,7 @@ func (p *fieldTestPlugin) TestEmptyInput(ctx context.Context, request emptypb.Em
 
 	return response, nil
 }
-func (p *fieldTestPlugin) TestError(ctx context.Context, request emptypb.Empty) (response Response, err error) {
+func (p *fieldTestPlugin) TestError(ctx context.Context, request ErrorRequest) (response Response, err error) {
 	data, err := request.MarshalVT()
 	if err != nil {
 		return response, err

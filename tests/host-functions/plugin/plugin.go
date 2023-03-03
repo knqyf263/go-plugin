@@ -12,7 +12,6 @@ import (
 // main is required for TinyGo to compile to Wasm.
 func main() {
 	proto.RegisterGreeter(TestPlugin{})
-
 }
 
 type TestPlugin struct{}
