@@ -9,6 +9,7 @@ option go_package = "github.com/knqyf263/go-plugin/test/fields/proto";
 service FieldTest {
   rpc Test(Request) returns (Response) {}
   rpc TestEmptyInput(google.protobuf.Empty) returns (TestEmptyInputResponse) {}
+  rpc TestError(ErrorRequest) returns (Response) {}
 }
 
 message TestEmptyInputResponse {
@@ -75,4 +76,8 @@ message Response {
   message Nested {
     string a = 1;
   }
+}
+
+message ErrorRequest {
+  string errText = 1;
 }

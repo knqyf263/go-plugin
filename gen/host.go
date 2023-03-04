@@ -325,23 +325,36 @@ func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Me
 	g.P("ptrSize, err := p.", strings.ToLower(method.GoName[:1]+method.GoName[1:]),
 		".Call(ctx, dataPtr, dataSize)")
 	g.P(errorHandling)
-	g.P(`
+	g.P(fmt.Sprintf(`
 			// Note: This pointer is still owned by TinyGo, so don't try to free it!
 			resPtr := uint32(ptrSize[0] >> 32)
 			resSize := uint32(ptrSize[0])
+			var isErrResponse bool
+			if (resSize & %s) > 0 {
+				isErrResponse = true
+				resSize &^= %s
+			}
 
 			// The pointer is a linear memory offset, which is where we write the name.
 			bytes, ok := p.module.Memory().Read(resPtr, resSize)
 			if !ok {
-				return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
+				return response, fmt.Errorf("Memory.Read(%%d, %%d) out of range of memory size %%d",
 					resPtr, resSize, p.module.Memory().Size())
+			}
+
+			if isErrResponse {
+				return response, %s(string(bytes))
 			}
 
 			if err = response.UnmarshalVT(bytes); err != nil {
 				return response, err
 			}
 
-			return response, nil`)
+			return response, nil`,
+		ErrorMaskBit,
+		ErrorMaskBit,
+		g.QualifiedGoIdent(errorsPackage.Ident("New"))),
+	)
 	g.P("}")
 }
 

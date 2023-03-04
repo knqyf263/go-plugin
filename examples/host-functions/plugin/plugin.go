@@ -5,16 +5,17 @@ package main
 import (
 	"context"
 
-	greeting "github.com/knqyf263/go-plugin/examples/host-functions/greeting"
+	"github.com/knqyf263/go-plugin/examples/host-functions/greeting"
 )
 
 // main is required for TinyGo to compile to Wasm.
 func main() {
 	greeting.RegisterGreeter(GreetingPlugin{})
-
 }
 
 type GreetingPlugin struct{}
+
+var _ greeting.Greeter = (*GreetingPlugin)(nil)
 
 func (m GreetingPlugin) Greet(ctx context.Context, request greeting.GreetRequest) (greeting.GreetReply, error) {
 	hostFunctions := greeting.NewHostFunctions()

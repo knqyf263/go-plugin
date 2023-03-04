@@ -36,7 +36,11 @@ func _greeter_greet(ptr, size uint32) uint64 {
 	}
 	response, err := greeter.Greet(context.Background(), req)
 	if err != nil {
-		return 0
+		ptr, size = wasm.ByteToPtr([]byte(err.Error()))
+		return (uint64(ptr) << uint64(32)) | uint64(size) |
+			// Indicate that this is the error string by setting the 32-th bit, assuming that
+			// no data exceeds 31-bit size (2 GiB).
+			(1 << 31)
 	}
 
 	b, err = response.MarshalVT()

@@ -18,7 +18,6 @@ import (
 func main() {
 	proto.RegisterKnownTypesTest(TestPlugin{})
 	proto.RegisterEmptyTest(TestPlugin{})
-
 }
 
 type TestPlugin struct{}

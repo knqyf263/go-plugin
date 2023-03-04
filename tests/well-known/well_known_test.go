@@ -13,7 +13,7 @@ import (
 	"github.com/knqyf263/go-plugin/types/known/emptypb"
 	"github.com/knqyf263/go-plugin/types/known/structpb"
 	"github.com/knqyf263/go-plugin/types/known/timestamppb"
-	wrapperspb "github.com/knqyf263/go-plugin/types/known/wrapperspb"
+	"github.com/knqyf263/go-plugin/types/known/wrapperspb"
 )
 
 func TestWellKnownTypes(t *testing.T) {

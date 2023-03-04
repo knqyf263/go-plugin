@@ -65,7 +65,11 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		g.P(fmt.Sprintf(`response, err := %s.%s(%s(), req)`,
 			serviceVar, method.GoName, g.QualifiedGoIdent(contextPackage.Ident("Background"))))
 		g.P(fmt.Sprintf(`if err != nil {
-					return 0
+					ptr, size = %s([]byte(err.Error()))
+					return (uint64(ptr) << uint64(32)) | uint64(size) |
+						// Indicate that this is the error string by setting the 32-th bit, assuming that
+						// no data exceeds 31-bit size (2 GiB).
+						%s
 				}
 
 				b, err = response.MarshalVT()
@@ -74,6 +78,8 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 				}
 				ptr, size = %s(b)
 				return (uint64(ptr) << uint64(32)) | uint64(size)`,
+			g.QualifiedGoIdent(pluginWasmPackage.Ident("ByteToPtr")),
+			ErrorMaskBit,
 			g.QualifiedGoIdent(pluginWasmPackage.Ident("ByteToPtr"))))
 		g.P("}")
 	}

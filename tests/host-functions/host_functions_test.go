@@ -34,8 +34,10 @@ func TestHostFunctions(t *testing.T) {
 // myHostFunctions implements proto.HostFunctions
 type myHostFunctions struct{}
 
+var _ proto.HostFunctions = (*myHostFunctions)(nil)
+
 // ParseJson is embedded into the plugin and can be called by the plugin.
-func (myHostFunctions) ParseJson(ctx context.Context, request proto.ParseJsonRequest) (proto.ParseJsonResponse, error) {
+func (myHostFunctions) ParseJson(_ context.Context, request proto.ParseJsonRequest) (proto.ParseJsonResponse, error) {
 	var person proto.Person
 	if err := json.Unmarshal(request.GetContent(), &person); err != nil {
 		return proto.ParseJsonResponse{}, err
