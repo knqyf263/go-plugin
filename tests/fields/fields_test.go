@@ -96,7 +96,7 @@ func TestErrorResponse(t *testing.T) {
 }
 
 func loadPlugin(ctx context.Context, t *testing.T) proto.FieldTest {
-	p, err := proto.NewFieldTestPlugin(ctx, proto.FieldTestPluginOption{})
+	p, err := proto.NewFieldTestPlugin(ctx)
 	require.NoError(t, err)
 	defer p.Close(ctx)
 
