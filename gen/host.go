@@ -118,7 +118,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("CompilationCache")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("ModuleConfig")),
 	))
 
 	g.P(fmt.Sprintf(
