@@ -111,94 +111,42 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 		type %s struct {
 			newRuntime   func(%s) (%s, error)
-			cache        %s
 			moduleConfig %s
-		}
-		
-		type %sNewRuntime func(%s) (%s, error)`,
+		}`,
 		pluginName,
 		pluginName,
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("CompilationCache")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("ModuleConfig")),
-		pluginName,
-		g.QualifiedGoIdent(contextPackage.Ident("Context")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
 	))
-
-	for _, fn := range []struct {
-		name      string
-		param     string
-		paramType string
-	}{
-		{
-			"Runtime",
-			"newRuntime",
-			fmt.Sprintf("%sNewRuntime", pluginName),
-		},
-		{
-			"ModuleConfig",
-			"moduleConfig",
-			g.QualifiedGoIdent(wazeroPackage.Ident("ModuleConfig")),
-		},
-		{
-			"Cache",
-			"cache",
-			g.QualifiedGoIdent(wazeroPackage.Ident("CompilationCache")),
-		},
-	} {
-		g.P(fmt.Sprintf(`
-		func %s%s(%s %s) %sOption {
-			return func(h *%s) {
-				h.%s = %s
-			}
-		}`,
-			pluginName, fn.name, fn.param, fn.paramType,
-			pluginName, pluginName, fn.param, fn.param,
-		))
-	}
 
 	g.P(fmt.Sprintf(
-		"func New%s(ctx %s, opts ...%sOption) (*%s, error) {",
+		"func New%s(ctx %s, opts ...%s) (*%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
-		pluginName,
+		g.QualifiedGoIdent(pluginOptionsPackage.Ident("WazeroConfigOption")),
 		pluginName,
 	))
-	g.P(fmt.Sprintf(`cache := %s()
-			o := &%s{
-				newRuntime: func(ctx %s) (%s, error) {
-					return %s(ctx, %s().WithCompilationCache(cache)), nil
-				},
-				cache:        cache,
-				moduleConfig: %s(),
-			}
+	g.P(fmt.Sprintf(`o := %s()
 			
 			for _, opt := range opts {
 				opt(o)
 			}
 
-			return o, nil
+			return &%s{
+				newRuntime:   o.NewRuntime,
+				moduleConfig: o.ModuleConfig,
+			}, nil
 		}`,
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewCompilationCache")),
+		g.QualifiedGoIdent(pluginOptionsPackage.Ident("NewWazeroConfig")),
 		pluginName,
-		g.QualifiedGoIdent(contextPackage.Ident("Context")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeWithConfig")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeConfig")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewModuleConfig")),
 	))
 
 	// Close plugin
 	g.P(fmt.Sprintf(`func (p *%s) Close(ctx %s) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
-	return
-}
-`,
+		return
+	}`,
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 	))
