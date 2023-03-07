@@ -12,6 +12,7 @@ import (
 	context "context"
 	errors "errors"
 	fmt "fmt"
+	options "github.com/knqyf263/go-plugin/options"
 	emptypb "github.com/knqyf263/go-plugin/types/known/emptypb"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
@@ -26,52 +27,24 @@ type KnownTypesTestPluginOption func(plugin *KnownTypesTestPlugin)
 
 type KnownTypesTestPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
-	cache        wazero.CompilationCache
 	moduleConfig wazero.ModuleConfig
 }
 
-type KnownTypesTestPluginNewRuntime func(context.Context) (wazero.Runtime, error)
-
-func KnownTypesTestPluginRuntime(newRuntime KnownTypesTestPluginNewRuntime) KnownTypesTestPluginOption {
-	return func(h *KnownTypesTestPlugin) {
-		h.newRuntime = newRuntime
-	}
-}
-
-func KnownTypesTestPluginModuleConfig(moduleConfig wazero.ModuleConfig) KnownTypesTestPluginOption {
-	return func(h *KnownTypesTestPlugin) {
-		h.moduleConfig = moduleConfig
-	}
-}
-
-func KnownTypesTestPluginCache(cache wazero.CompilationCache) KnownTypesTestPluginOption {
-	return func(h *KnownTypesTestPlugin) {
-		h.cache = cache
-	}
-}
-func NewKnownTypesTestPlugin(ctx context.Context, opts ...KnownTypesTestPluginOption) (*KnownTypesTestPlugin, error) {
-	cache := wazero.NewCompilationCache()
-	o := &KnownTypesTestPlugin{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
-		},
-		cache:        cache,
-		moduleConfig: wazero.NewModuleConfig(),
-	}
+func NewKnownTypesTestPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*KnownTypesTestPlugin, error) {
+	o := options.NewWazeroConfig()
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	return o, nil
+	return &KnownTypesTestPlugin{
+		newRuntime:   o.NewRuntime,
+		moduleConfig: o.ModuleConfig,
+	}, nil
 }
 func (p *KnownTypesTestPlugin) Close(ctx context.Context) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
 	return
 }
-
 func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (KnownTypesTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
@@ -212,52 +185,24 @@ type EmptyTestPluginOption func(plugin *EmptyTestPlugin)
 
 type EmptyTestPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
-	cache        wazero.CompilationCache
 	moduleConfig wazero.ModuleConfig
 }
 
-type EmptyTestPluginNewRuntime func(context.Context) (wazero.Runtime, error)
-
-func EmptyTestPluginRuntime(newRuntime EmptyTestPluginNewRuntime) EmptyTestPluginOption {
-	return func(h *EmptyTestPlugin) {
-		h.newRuntime = newRuntime
-	}
-}
-
-func EmptyTestPluginModuleConfig(moduleConfig wazero.ModuleConfig) EmptyTestPluginOption {
-	return func(h *EmptyTestPlugin) {
-		h.moduleConfig = moduleConfig
-	}
-}
-
-func EmptyTestPluginCache(cache wazero.CompilationCache) EmptyTestPluginOption {
-	return func(h *EmptyTestPlugin) {
-		h.cache = cache
-	}
-}
-func NewEmptyTestPlugin(ctx context.Context, opts ...EmptyTestPluginOption) (*EmptyTestPlugin, error) {
-	cache := wazero.NewCompilationCache()
-	o := &EmptyTestPlugin{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
-		},
-		cache:        cache,
-		moduleConfig: wazero.NewModuleConfig(),
-	}
+func NewEmptyTestPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*EmptyTestPlugin, error) {
+	o := options.NewWazeroConfig()
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	return o, nil
+	return &EmptyTestPlugin{
+		newRuntime:   o.NewRuntime,
+		moduleConfig: o.ModuleConfig,
+	}, nil
 }
 func (p *EmptyTestPlugin) Close(ctx context.Context) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
 	return
 }
-
 func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

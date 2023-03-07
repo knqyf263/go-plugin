@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"log"
 	"os"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/tetratelabs/wazero"
 
 	"github.com/knqyf263/go-plugin/examples/known-types/known"
+	"github.com/knqyf263/go-plugin/options"
 	"github.com/knqyf263/go-plugin/types/known/structpb"
 	"github.com/knqyf263/go-plugin/types/known/timestamppb"
 )
@@ -23,7 +25,7 @@ func main() {
 func run() error {
 	ctx := context.Background()
 	mc := wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)
-	p, err := known.NewWellKnownPlugin(ctx, known.WellKnownPluginModuleConfig(mc))
+	p, err := known.NewWellKnownPlugin(ctx, options.WazeroModuleConfig(mc))
 	if err != nil {
 		return err
 	}

@@ -326,7 +326,7 @@ mc := wazero.NewModuleConfig().
     WithStdout(os.Stdout). // Attach stdout so that the plugin can write outputs to stdout
     WithStderr(os.Stderr). // Attach stderr so that the plugin can write errors to stderr
     WithFS(f)              // Loaded plugins can access only files that the host allows.
-p, err := cat.NewFileCatPlugin(ctx, cat.FileCatPluginModuleConfig(mc))
+p, err := cat.NewFileCatPlugin(ctx, options.WazeroModuleConfig(mc))
 ```
 
 If you need structured and leveled logging, you can define host functions so that plugins can call those logging functions.

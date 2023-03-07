@@ -12,6 +12,7 @@ import (
 	context "context"
 	errors "errors"
 	fmt "fmt"
+	options "github.com/knqyf263/go-plugin/options"
 	emptypb "github.com/knqyf263/go-plugin/types/known/emptypb"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
@@ -26,52 +27,24 @@ type FieldTestPluginOption func(plugin *FieldTestPlugin)
 
 type FieldTestPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
-	cache        wazero.CompilationCache
 	moduleConfig wazero.ModuleConfig
 }
 
-type FieldTestPluginNewRuntime func(context.Context) (wazero.Runtime, error)
-
-func FieldTestPluginRuntime(newRuntime FieldTestPluginNewRuntime) FieldTestPluginOption {
-	return func(h *FieldTestPlugin) {
-		h.newRuntime = newRuntime
-	}
-}
-
-func FieldTestPluginModuleConfig(moduleConfig wazero.ModuleConfig) FieldTestPluginOption {
-	return func(h *FieldTestPlugin) {
-		h.moduleConfig = moduleConfig
-	}
-}
-
-func FieldTestPluginCache(cache wazero.CompilationCache) FieldTestPluginOption {
-	return func(h *FieldTestPlugin) {
-		h.cache = cache
-	}
-}
-func NewFieldTestPlugin(ctx context.Context, opts ...FieldTestPluginOption) (*FieldTestPlugin, error) {
-	cache := wazero.NewCompilationCache()
-	o := &FieldTestPlugin{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
-		},
-		cache:        cache,
-		moduleConfig: wazero.NewModuleConfig(),
-	}
+func NewFieldTestPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*FieldTestPlugin, error) {
+	o := options.NewWazeroConfig()
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	return o, nil
+	return &FieldTestPlugin{
+		newRuntime:   o.NewRuntime,
+		moduleConfig: o.ModuleConfig,
+	}, nil
 }
 func (p *FieldTestPlugin) Close(ctx context.Context) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
 	return
 }
-
 func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

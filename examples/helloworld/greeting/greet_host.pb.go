@@ -12,6 +12,7 @@ import (
 	context "context"
 	errors "errors"
 	fmt "fmt"
+	options "github.com/knqyf263/go-plugin/options"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
@@ -25,52 +26,24 @@ type GreeterPluginOption func(plugin *GreeterPlugin)
 
 type GreeterPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
-	cache        wazero.CompilationCache
 	moduleConfig wazero.ModuleConfig
 }
 
-type GreeterPluginNewRuntime func(context.Context) (wazero.Runtime, error)
-
-func GreeterPluginRuntime(newRuntime GreeterPluginNewRuntime) GreeterPluginOption {
-	return func(h *GreeterPlugin) {
-		h.newRuntime = newRuntime
-	}
-}
-
-func GreeterPluginModuleConfig(moduleConfig wazero.ModuleConfig) GreeterPluginOption {
-	return func(h *GreeterPlugin) {
-		h.moduleConfig = moduleConfig
-	}
-}
-
-func GreeterPluginCache(cache wazero.CompilationCache) GreeterPluginOption {
-	return func(h *GreeterPlugin) {
-		h.cache = cache
-	}
-}
-func NewGreeterPlugin(ctx context.Context, opts ...GreeterPluginOption) (*GreeterPlugin, error) {
-	cache := wazero.NewCompilationCache()
-	o := &GreeterPlugin{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
-		},
-		cache:        cache,
-		moduleConfig: wazero.NewModuleConfig(),
-	}
+func NewGreeterPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*GreeterPlugin, error) {
+	o := options.NewWazeroConfig()
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	return o, nil
+	return &GreeterPlugin{
+		newRuntime:   o.NewRuntime,
+		moduleConfig: o.ModuleConfig,
+	}, nil
 }
 func (p *GreeterPlugin) Close(ctx context.Context) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
 	return
 }
-
 func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string) (Greeter, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

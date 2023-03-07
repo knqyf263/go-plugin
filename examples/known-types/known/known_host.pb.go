@@ -12,6 +12,7 @@ import (
 	context "context"
 	errors "errors"
 	fmt "fmt"
+	options "github.com/knqyf263/go-plugin/options"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
@@ -25,52 +26,24 @@ type WellKnownPluginOption func(plugin *WellKnownPlugin)
 
 type WellKnownPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
-	cache        wazero.CompilationCache
 	moduleConfig wazero.ModuleConfig
 }
 
-type WellKnownPluginNewRuntime func(context.Context) (wazero.Runtime, error)
-
-func WellKnownPluginRuntime(newRuntime WellKnownPluginNewRuntime) WellKnownPluginOption {
-	return func(h *WellKnownPlugin) {
-		h.newRuntime = newRuntime
-	}
-}
-
-func WellKnownPluginModuleConfig(moduleConfig wazero.ModuleConfig) WellKnownPluginOption {
-	return func(h *WellKnownPlugin) {
-		h.moduleConfig = moduleConfig
-	}
-}
-
-func WellKnownPluginCache(cache wazero.CompilationCache) WellKnownPluginOption {
-	return func(h *WellKnownPlugin) {
-		h.cache = cache
-	}
-}
-func NewWellKnownPlugin(ctx context.Context, opts ...WellKnownPluginOption) (*WellKnownPlugin, error) {
-	cache := wazero.NewCompilationCache()
-	o := &WellKnownPlugin{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
-		},
-		cache:        cache,
-		moduleConfig: wazero.NewModuleConfig(),
-	}
+func NewWellKnownPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*WellKnownPlugin, error) {
+	o := options.NewWazeroConfig()
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	return o, nil
+	return &WellKnownPlugin{
+		newRuntime:   o.NewRuntime,
+		moduleConfig: o.ModuleConfig,
+	}, nil
 }
 func (p *WellKnownPlugin) Close(ctx context.Context) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
 	return
 }
-
 func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (WellKnown, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

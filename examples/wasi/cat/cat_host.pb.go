@@ -12,6 +12,7 @@ import (
 	context "context"
 	errors "errors"
 	fmt "fmt"
+	options "github.com/knqyf263/go-plugin/options"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
@@ -25,52 +26,24 @@ type FileCatPluginOption func(plugin *FileCatPlugin)
 
 type FileCatPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
-	cache        wazero.CompilationCache
 	moduleConfig wazero.ModuleConfig
 }
 
-type FileCatPluginNewRuntime func(context.Context) (wazero.Runtime, error)
-
-func FileCatPluginRuntime(newRuntime FileCatPluginNewRuntime) FileCatPluginOption {
-	return func(h *FileCatPlugin) {
-		h.newRuntime = newRuntime
-	}
-}
-
-func FileCatPluginModuleConfig(moduleConfig wazero.ModuleConfig) FileCatPluginOption {
-	return func(h *FileCatPlugin) {
-		h.moduleConfig = moduleConfig
-	}
-}
-
-func FileCatPluginCache(cache wazero.CompilationCache) FileCatPluginOption {
-	return func(h *FileCatPlugin) {
-		h.cache = cache
-	}
-}
-func NewFileCatPlugin(ctx context.Context, opts ...FileCatPluginOption) (*FileCatPlugin, error) {
-	cache := wazero.NewCompilationCache()
-	o := &FileCatPlugin{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
-		},
-		cache:        cache,
-		moduleConfig: wazero.NewModuleConfig(),
-	}
+func NewFileCatPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*FileCatPlugin, error) {
+	o := options.NewWazeroConfig()
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	return o, nil
+	return &FileCatPlugin{
+		newRuntime:   o.NewRuntime,
+		moduleConfig: o.ModuleConfig,
+	}, nil
 }
 func (p *FileCatPlugin) Close(ctx context.Context) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
 	return
 }
-
 func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (FileCat, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

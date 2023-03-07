@@ -12,6 +12,7 @@ import (
 	context "context"
 	errors "errors"
 	fmt "fmt"
+	options "github.com/knqyf263/go-plugin/options"
 	bar "github.com/knqyf263/go-plugin/tests/import/proto/bar"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
@@ -26,52 +27,24 @@ type FooPluginOption func(plugin *FooPlugin)
 
 type FooPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
-	cache        wazero.CompilationCache
 	moduleConfig wazero.ModuleConfig
 }
 
-type FooPluginNewRuntime func(context.Context) (wazero.Runtime, error)
-
-func FooPluginRuntime(newRuntime FooPluginNewRuntime) FooPluginOption {
-	return func(h *FooPlugin) {
-		h.newRuntime = newRuntime
-	}
-}
-
-func FooPluginModuleConfig(moduleConfig wazero.ModuleConfig) FooPluginOption {
-	return func(h *FooPlugin) {
-		h.moduleConfig = moduleConfig
-	}
-}
-
-func FooPluginCache(cache wazero.CompilationCache) FooPluginOption {
-	return func(h *FooPlugin) {
-		h.cache = cache
-	}
-}
-func NewFooPlugin(ctx context.Context, opts ...FooPluginOption) (*FooPlugin, error) {
-	cache := wazero.NewCompilationCache()
-	o := &FooPlugin{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
-		},
-		cache:        cache,
-		moduleConfig: wazero.NewModuleConfig(),
-	}
+func NewFooPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*FooPlugin, error) {
+	o := options.NewWazeroConfig()
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	return o, nil
+	return &FooPlugin{
+		newRuntime:   o.NewRuntime,
+		moduleConfig: o.ModuleConfig,
+	}, nil
 }
 func (p *FooPlugin) Close(ctx context.Context) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
 	return
 }
-
 func (p *FooPlugin) Load(ctx context.Context, pluginPath string) (Foo, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

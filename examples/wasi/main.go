@@ -11,6 +11,7 @@ import (
 	"github.com/tetratelabs/wazero"
 
 	"github.com/knqyf263/go-plugin/examples/wasi/cat"
+	"github.com/knqyf263/go-plugin/options"
 )
 
 //go:embed testdata/hello.txt
@@ -28,7 +29,7 @@ func run() error {
 		WithStdout(os.Stdout). // Attach stdout so that the plugin can write outputs to stdout
 		WithStderr(os.Stderr). // Attach stderr so that the plugin can write errors to stderr
 		WithFS(f)              // Loaded plugins can access only files that the host allows.
-	p, err := cat.NewFileCatPlugin(ctx, cat.FileCatPluginModuleConfig(mc))
+	p, err := cat.NewFileCatPlugin(ctx, options.WazeroModuleConfig(mc))
 	if err != nil {
 		return err
 	}

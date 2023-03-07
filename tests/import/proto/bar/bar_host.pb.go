@@ -12,6 +12,7 @@ import (
 	context "context"
 	errors "errors"
 	fmt "fmt"
+	options "github.com/knqyf263/go-plugin/options"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
 	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
@@ -25,52 +26,24 @@ type BarPluginOption func(plugin *BarPlugin)
 
 type BarPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
-	cache        wazero.CompilationCache
 	moduleConfig wazero.ModuleConfig
 }
 
-type BarPluginNewRuntime func(context.Context) (wazero.Runtime, error)
-
-func BarPluginRuntime(newRuntime BarPluginNewRuntime) BarPluginOption {
-	return func(h *BarPlugin) {
-		h.newRuntime = newRuntime
-	}
-}
-
-func BarPluginModuleConfig(moduleConfig wazero.ModuleConfig) BarPluginOption {
-	return func(h *BarPlugin) {
-		h.moduleConfig = moduleConfig
-	}
-}
-
-func BarPluginCache(cache wazero.CompilationCache) BarPluginOption {
-	return func(h *BarPlugin) {
-		h.cache = cache
-	}
-}
-func NewBarPlugin(ctx context.Context, opts ...BarPluginOption) (*BarPlugin, error) {
-	cache := wazero.NewCompilationCache()
-	o := &BarPlugin{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache)), nil
-		},
-		cache:        cache,
-		moduleConfig: wazero.NewModuleConfig(),
-	}
+func NewBarPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*BarPlugin, error) {
+	o := options.NewWazeroConfig()
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	return o, nil
+	return &BarPlugin{
+		newRuntime:   o.NewRuntime,
+		moduleConfig: o.ModuleConfig,
+	}, nil
 }
 func (p *BarPlugin) Close(ctx context.Context) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
 	return
 }
-
 func (p *BarPlugin) Load(ctx context.Context, pluginPath string) (Bar, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
