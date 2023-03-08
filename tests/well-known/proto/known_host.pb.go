@@ -28,6 +28,7 @@ type KnownTypesTestPluginOption func(plugin *KnownTypesTestPlugin)
 type KnownTypesTestPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
 	moduleConfig wazero.ModuleConfig
+	runtimes     []wazero.Runtime
 }
 
 func NewKnownTypesTestPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*KnownTypesTestPlugin, error) {
@@ -42,7 +43,13 @@ func NewKnownTypesTestPlugin(ctx context.Context, opts ...options.WazeroConfigOp
 		moduleConfig: o.ModuleConfig,
 	}, nil
 }
+
 func (p *KnownTypesTestPlugin) Close(ctx context.Context) (err error) {
+	for i := range p.runtimes {
+		if r := p.runtimes[i]; r != nil {
+			err = r.Close(ctx)
+		}
+	}
 	return
 }
 func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (KnownTypesTest, error) {
@@ -56,6 +63,7 @@ func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (Kno
 	if err != nil {
 		return nil, err
 	}
+	p.runtimes = append(p.runtimes, r)
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
@@ -186,6 +194,7 @@ type EmptyTestPluginOption func(plugin *EmptyTestPlugin)
 type EmptyTestPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
 	moduleConfig wazero.ModuleConfig
+	runtimes     []wazero.Runtime
 }
 
 func NewEmptyTestPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*EmptyTestPlugin, error) {
@@ -200,7 +209,13 @@ func NewEmptyTestPlugin(ctx context.Context, opts ...options.WazeroConfigOption)
 		moduleConfig: o.ModuleConfig,
 	}, nil
 }
+
 func (p *EmptyTestPlugin) Close(ctx context.Context) (err error) {
+	for i := range p.runtimes {
+		if r := p.runtimes[i]; r != nil {
+			err = r.Close(ctx)
+		}
+	}
 	return
 }
 func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTest, error) {
@@ -214,6 +229,7 @@ func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTes
 	if err != nil {
 		return nil, err
 	}
+	p.runtimes = append(p.runtimes, r)
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err

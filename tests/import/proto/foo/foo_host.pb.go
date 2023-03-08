@@ -28,6 +28,7 @@ type FooPluginOption func(plugin *FooPlugin)
 type FooPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
 	moduleConfig wazero.ModuleConfig
+	runtimes     []wazero.Runtime
 }
 
 func NewFooPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*FooPlugin, error) {
@@ -42,7 +43,13 @@ func NewFooPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*Foo
 		moduleConfig: o.ModuleConfig,
 	}, nil
 }
+
 func (p *FooPlugin) Close(ctx context.Context) (err error) {
+	for i := range p.runtimes {
+		if r := p.runtimes[i]; r != nil {
+			err = r.Close(ctx)
+		}
+	}
 	return
 }
 func (p *FooPlugin) Load(ctx context.Context, pluginPath string) (Foo, error) {
@@ -56,6 +63,7 @@ func (p *FooPlugin) Load(ctx context.Context, pluginPath string) (Foo, error) {
 	if err != nil {
 		return nil, err
 	}
+	p.runtimes = append(p.runtimes, r)
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err

@@ -27,6 +27,7 @@ type FileCatPluginOption func(plugin *FileCatPlugin)
 type FileCatPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
 	moduleConfig wazero.ModuleConfig
+	runtimes     []wazero.Runtime
 }
 
 func NewFileCatPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*FileCatPlugin, error) {
@@ -41,7 +42,13 @@ func NewFileCatPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (
 		moduleConfig: o.ModuleConfig,
 	}, nil
 }
+
 func (p *FileCatPlugin) Close(ctx context.Context) (err error) {
+	for i := range p.runtimes {
+		if r := p.runtimes[i]; r != nil {
+			err = r.Close(ctx)
+		}
+	}
 	return
 }
 func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (FileCat, error) {
@@ -55,6 +62,7 @@ func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (FileCat, e
 	if err != nil {
 		return nil, err
 	}
+	p.runtimes = append(p.runtimes, r)
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err

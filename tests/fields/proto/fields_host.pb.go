@@ -28,6 +28,7 @@ type FieldTestPluginOption func(plugin *FieldTestPlugin)
 type FieldTestPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
 	moduleConfig wazero.ModuleConfig
+	runtimes     []wazero.Runtime
 }
 
 func NewFieldTestPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*FieldTestPlugin, error) {
@@ -42,7 +43,13 @@ func NewFieldTestPlugin(ctx context.Context, opts ...options.WazeroConfigOption)
 		moduleConfig: o.ModuleConfig,
 	}, nil
 }
+
 func (p *FieldTestPlugin) Close(ctx context.Context) (err error) {
+	for i := range p.runtimes {
+		if r := p.runtimes[i]; r != nil {
+			err = r.Close(ctx)
+		}
+	}
 	return
 }
 func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTest, error) {
@@ -56,6 +63,7 @@ func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTes
 	if err != nil {
 		return nil, err
 	}
+	p.runtimes = append(p.runtimes, r)
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err

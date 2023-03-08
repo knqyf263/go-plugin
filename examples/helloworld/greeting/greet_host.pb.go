@@ -27,6 +27,7 @@ type GreeterPluginOption func(plugin *GreeterPlugin)
 type GreeterPlugin struct {
 	newRuntime   func(context.Context) (wazero.Runtime, error)
 	moduleConfig wazero.ModuleConfig
+	runtimes     []wazero.Runtime
 }
 
 func NewGreeterPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (*GreeterPlugin, error) {
@@ -41,7 +42,13 @@ func NewGreeterPlugin(ctx context.Context, opts ...options.WazeroConfigOption) (
 		moduleConfig: o.ModuleConfig,
 	}, nil
 }
+
 func (p *GreeterPlugin) Close(ctx context.Context) (err error) {
+	for i := range p.runtimes {
+		if r := p.runtimes[i]; r != nil {
+			err = r.Close(ctx)
+		}
+	}
 	return
 }
 func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string) (Greeter, error) {
@@ -55,6 +62,7 @@ func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string) (Greeter, e
 	if err != nil {
 		return nil, err
 	}
+	p.runtimes = append(p.runtimes, r)
 
 	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
