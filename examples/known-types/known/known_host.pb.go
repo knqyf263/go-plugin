@@ -51,6 +51,7 @@ func (p *WellKnownPlugin) Close(ctx context.Context) (err error) {
 	}
 	return
 }
+
 func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (WellKnown, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

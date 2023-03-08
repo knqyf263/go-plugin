@@ -52,6 +52,7 @@ func (p *KnownTypesTestPlugin) Close(ctx context.Context) (err error) {
 	}
 	return
 }
+
 func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (KnownTypesTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
@@ -218,6 +219,7 @@ func (p *EmptyTestPlugin) Close(ctx context.Context) (err error) {
 	}
 	return
 }
+
 func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

@@ -52,6 +52,7 @@ func (p *FieldTestPlugin) Close(ctx context.Context) (err error) {
 	}
 	return
 }
+
 func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

@@ -51,6 +51,7 @@ func (p *FileCatPlugin) Close(ctx context.Context) (err error) {
 	}
 	return
 }
+
 func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (FileCat, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

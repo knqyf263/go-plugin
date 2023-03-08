@@ -52,6 +52,7 @@ func (p *FooPlugin) Close(ctx context.Context) (err error) {
 	}
 	return
 }
+
 func (p *FooPlugin) Load(ctx context.Context, pluginPath string) (Foo, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

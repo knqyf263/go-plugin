@@ -51,6 +51,7 @@ func (p *BarPlugin) Close(ctx context.Context) (err error) {
 	}
 	return
 }
+
 func (p *BarPlugin) Load(ctx context.Context, pluginPath string) (Bar, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {

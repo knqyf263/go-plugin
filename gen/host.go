@@ -154,7 +154,8 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 			}
 		}
 		return
-	}`,
+	}
+	`,
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 	))
