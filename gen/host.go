@@ -112,6 +112,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		type %s struct {
 			newRuntime   func(%s) (%s, error)
 			moduleConfig %s
+			runtimes []%s
 		}`,
 		pluginName,
 		pluginName,
@@ -119,6 +120,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("ModuleConfig")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
 	))
 
 	g.P(fmt.Sprintf(
@@ -129,7 +131,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		pluginName,
 	))
 	g.P(fmt.Sprintf(`o := %s()
-			
+
 			for _, opt := range opts {
 				opt(o)
 			}
@@ -138,13 +140,19 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 				newRuntime:   o.NewRuntime,
 				moduleConfig: o.ModuleConfig,
 			}, nil
-		}`,
+		}
+	`,
 		g.QualifiedGoIdent(pluginOptionsPackage.Ident("NewWazeroConfig")),
 		pluginName,
 	))
 
 	// Close plugin
 	g.P(fmt.Sprintf(`func (p *%s) Close(ctx %s) (err error) {
+		for i := range p.runtimes {
+			if r := p.runtimes[i]; r != nil {
+				err = r.Close(ctx)
+			}
+		}
 		return
 	}`,
 		pluginName,
@@ -181,6 +189,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		if err != nil {
 			return nil, err
 		}
+		p.runtimes = append(p.runtimes, r)
 		%s
 
 		if _, err = %s(r).Instantiate(ctx); err != nil {
