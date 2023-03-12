@@ -148,7 +148,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	))
 
 	// Plugin loading
-	structName := strings.ToLower(service.GoName[:1]) + service.GoName[1:] + "Plugin"
+	structName := strings.ToLower(service.GoName[:1]) + service.GoName[1:]
 	var hostFunctionsArg, exportHostFunctions string
 	if f.hostService != nil {
 		hostFunctionsArg = ", hostFunctions " + f.hostService.GoName
@@ -161,21 +161,21 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	}
 
 	g.P(fmt.Sprintf(`
-		type %sInterface interface {
+		type %s interface {
 			Close(ctx %s) error
 			%s
 		}
 	`,
-		service.GoName,
+		structName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		service.GoName,
 	))
 
-	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s) (%sInterface, error) {",
+	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s) (%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		hostFunctionsArg,
-		service.GoName,
+		structName,
 	))
 
 	g.P(fmt.Sprintf(`b, err := %s(pluginPath)
@@ -260,7 +260,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}`,
 		errorsNew, errorsNew))
 
-	g.P("return &", structName, "{",
+	g.P("return &", structName, "Plugin {",
 		`
          runtime: r,
          module: module,
@@ -276,7 +276,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	g.P()
 
 	// Close plugin instance
-	g.P(fmt.Sprintf(`func (p *%s) Close(ctx %s) (err error) {
+	g.P(fmt.Sprintf(`func (p *%sPlugin) Close(ctx %s) (err error) {
 		if r := p.runtime; r!= nil {
 			r.Close(ctx)
 		}
@@ -290,7 +290,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	// Struct definition
 	moduleType := g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module"))
 	funcType := g.QualifiedGoIdent(wazeroAPIPackage.Ident("Function"))
-	g.P("type ", structName, " struct{")
+	g.P("type ", structName, "Plugin struct{")
 	g.P(fmt.Sprintf(`
 		runtime  %s
 		module   %s
@@ -305,7 +305,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	g.P("}")
 
 	for _, method := range service.Methods {
-		genPluginMethod(g, f, method, structName)
+		genPluginMethod(g, f, method, structName+"Plugin")
 	}
 }
 
