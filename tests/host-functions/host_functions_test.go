@@ -16,7 +16,9 @@ import (
 func TestHostFunctions(t *testing.T) {
 	ctx := context.Background()
 	mc := wazero.NewModuleConfig().WithStdout(os.Stdout)
-	p, err := proto.NewGreeterPlugin(ctx, proto.WazeroModuleConfig(mc))
+	p, err := proto.NewGreeterPlugin(ctx, proto.WazeroRuntime(func(ctx context.Context) (wazero.Runtime, error) {
+		return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(wazero.NewCompilationCache())), nil
+	}), proto.WazeroModuleConfig(mc))
 	require.NoError(t, err)
 
 	// Pass my host functions that are embedded into the plugin.

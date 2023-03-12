@@ -45,12 +45,12 @@ func NewFooPlugin(ctx context.Context, opts ...wazeroConfigOption) (*FooPlugin, 
 	}, nil
 }
 
-type FooInterface interface {
+type foo interface {
 	Close(ctx context.Context) error
 	Foo
 }
 
-func (p *FooPlugin) Load(ctx context.Context, pluginPath string) (FooInterface, error) {
+func (p *FooPlugin) Load(ctx context.Context, pluginPath string) (foo, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err

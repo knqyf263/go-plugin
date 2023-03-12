@@ -16,10 +16,7 @@ func main() {
 
 type TestPlugin struct{}
 
-func (p TestPlugin) Close(ctx context.Context) error {
-	//TODO implement me
-	panic("implement me")
-}
+var _ proto.Greeter = (*TestPlugin)(nil)
 
 func (p TestPlugin) Greet(ctx context.Context, request proto.GreetRequest) (proto.GreetReply, error) {
 	hostFunctions := proto.NewHostFunctions()

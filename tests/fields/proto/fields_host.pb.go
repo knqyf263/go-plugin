@@ -45,12 +45,12 @@ func NewFieldTestPlugin(ctx context.Context, opts ...wazeroConfigOption) (*Field
 	}, nil
 }
 
-type FieldTestInterface interface {
+type fieldTest interface {
 	Close(ctx context.Context) error
 	FieldTest
 }
 
-func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (FieldTestInterface, error) {
+func (p *FieldTestPlugin) Load(ctx context.Context, pluginPath string) (fieldTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err

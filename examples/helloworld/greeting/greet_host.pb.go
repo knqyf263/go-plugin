@@ -44,12 +44,12 @@ func NewGreeterPlugin(ctx context.Context, opts ...wazeroConfigOption) (*Greeter
 	}, nil
 }
 
-type GreeterInterface interface {
+type greeter interface {
 	Close(ctx context.Context) error
 	Greeter
 }
 
-func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string) (GreeterInterface, error) {
+func (p *GreeterPlugin) Load(ctx context.Context, pluginPath string) (greeter, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err

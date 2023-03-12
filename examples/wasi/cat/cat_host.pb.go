@@ -44,12 +44,12 @@ func NewFileCatPlugin(ctx context.Context, opts ...wazeroConfigOption) (*FileCat
 	}, nil
 }
 
-type FileCatInterface interface {
+type fileCat interface {
 	Close(ctx context.Context) error
 	FileCat
 }
 
-func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (FileCatInterface, error) {
+func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (fileCat, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err

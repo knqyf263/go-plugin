@@ -44,12 +44,12 @@ func NewBarPlugin(ctx context.Context, opts ...wazeroConfigOption) (*BarPlugin, 
 	}, nil
 }
 
-type BarInterface interface {
+type bar interface {
 	Close(ctx context.Context) error
 	Bar
 }
 
-func (p *BarPlugin) Load(ctx context.Context, pluginPath string) (BarInterface, error) {
+func (p *BarPlugin) Load(ctx context.Context, pluginPath string) (bar, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err

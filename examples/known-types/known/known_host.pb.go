@@ -44,12 +44,12 @@ func NewWellKnownPlugin(ctx context.Context, opts ...wazeroConfigOption) (*WellK
 	}, nil
 }
 
-type WellKnownInterface interface {
+type wellKnown interface {
 	Close(ctx context.Context) error
 	WellKnown
 }
 
-func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (WellKnownInterface, error) {
+func (p *WellKnownPlugin) Load(ctx context.Context, pluginPath string) (wellKnown, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err

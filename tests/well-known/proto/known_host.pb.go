@@ -45,12 +45,12 @@ func NewKnownTypesTestPlugin(ctx context.Context, opts ...wazeroConfigOption) (*
 	}, nil
 }
 
-type KnownTypesTestInterface interface {
+type knownTypesTest interface {
 	Close(ctx context.Context) error
 	KnownTypesTest
 }
 
-func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (KnownTypesTestInterface, error) {
+func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (knownTypesTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err
@@ -219,12 +219,12 @@ func NewEmptyTestPlugin(ctx context.Context, opts ...wazeroConfigOption) (*Empty
 	}, nil
 }
 
-type EmptyTestInterface interface {
+type emptyTest interface {
 	Close(ctx context.Context) error
 	EmptyTest
 }
 
-func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (EmptyTestInterface, error) {
+func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (emptyTest, error) {
 	b, err := os.ReadFile(pluginPath)
 	if err != nil {
 		return nil, err
