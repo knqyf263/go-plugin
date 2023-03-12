@@ -11,6 +11,7 @@ package cat
 import (
 	context "context"
 	wazero "github.com/tetratelabs/wazero"
+	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
 
 type wazeroConfigOption func(plugin *WazeroConfig)
@@ -25,6 +26,17 @@ type WazeroConfig struct {
 func WazeroRuntime(newRuntime WazeroNewRuntime) wazeroConfigOption {
 	return func(h *WazeroConfig) {
 		h.newRuntime = newRuntime
+	}
+}
+
+func defaultWazeroRuntime() WazeroNewRuntime {
+	return func(ctx context.Context) (wazero.Runtime, error) {
+		r := wazero.NewRuntime(ctx)
+		if _, err := wasi_snapshot_preview1.Instantiate(ctx, r); err != nil {
+			return nil, err
+		}
+
+		return r, nil
 	}
 }
 

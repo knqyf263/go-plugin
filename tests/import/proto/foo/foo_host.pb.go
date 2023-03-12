@@ -15,7 +15,6 @@ import (
 	bar "github.com/knqyf263/go-plugin/tests/import/proto/bar"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
-	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	sys "github.com/tetratelabs/wazero/sys"
 	os "os"
 )
@@ -29,9 +28,7 @@ type FooPlugin struct {
 
 func NewFooPlugin(ctx context.Context, opts ...wazeroConfigOption) (*FooPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntime(ctx), nil
-		},
+		newRuntime:   defaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 
@@ -59,10 +56,6 @@ func (p *FooPlugin) Load(ctx context.Context, pluginPath string) (foo, error) {
 	// Create a new runtime so that multiple modules will not conflict
 	r, err := p.newRuntime(ctx)
 	if err != nil {
-		return nil, err
-	}
-
-	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
 	}
 

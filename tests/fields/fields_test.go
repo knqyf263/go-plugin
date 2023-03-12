@@ -17,8 +17,8 @@ func TestFields(t *testing.T) {
 	require.NoError(t, err)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
-	defer plugin.Close(ctx)
 	require.NoError(t, err)
+	defer plugin.Close(ctx)
 
 	res, err := plugin.TestEmptyInput(ctx, emptypb.Empty{})
 	require.NoError(t, err)
@@ -84,8 +84,8 @@ func TestErrorResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
-	defer plugin.Close(ctx)
 	require.NoError(t, err)
+	defer plugin.Close(ctx)
 
 	for _, tt := range []struct {
 		name       string

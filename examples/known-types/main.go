@@ -29,10 +29,10 @@ func run() error {
 	}
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
-	defer plugin.Close(ctx)
 	if err != nil {
 		return err
 	}
+	defer plugin.Close(ctx)
 
 	value, err := structpb.NewValue(map[string]interface{}{
 		"A": "Sushi",

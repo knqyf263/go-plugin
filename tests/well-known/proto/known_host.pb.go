@@ -15,7 +15,6 @@ import (
 	emptypb "github.com/knqyf263/go-plugin/types/known/emptypb"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
-	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	sys "github.com/tetratelabs/wazero/sys"
 	os "os"
 )
@@ -29,9 +28,7 @@ type KnownTypesTestPlugin struct {
 
 func NewKnownTypesTestPlugin(ctx context.Context, opts ...wazeroConfigOption) (*KnownTypesTestPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntime(ctx), nil
-		},
+		newRuntime:   defaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 
@@ -59,10 +56,6 @@ func (p *KnownTypesTestPlugin) Load(ctx context.Context, pluginPath string) (kno
 	// Create a new runtime so that multiple modules will not conflict
 	r, err := p.newRuntime(ctx)
 	if err != nil {
-		return nil, err
-	}
-
-	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
 	}
 
@@ -203,9 +196,7 @@ type EmptyTestPlugin struct {
 
 func NewEmptyTestPlugin(ctx context.Context, opts ...wazeroConfigOption) (*EmptyTestPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntime(ctx), nil
-		},
+		newRuntime:   defaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 
@@ -233,10 +224,6 @@ func (p *EmptyTestPlugin) Load(ctx context.Context, pluginPath string) (emptyTes
 	// Create a new runtime so that multiple modules will not conflict
 	r, err := p.newRuntime(ctx)
 	if err != nil {
-		return nil, err
-	}
-
-	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
 	}
 

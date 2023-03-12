@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tetratelabs/wazero"
+	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 
 	"github.com/knqyf263/go-plugin/tests/host-functions/proto"
 )
@@ -17,14 +18,19 @@ func TestHostFunctions(t *testing.T) {
 	ctx := context.Background()
 	mc := wazero.NewModuleConfig().WithStdout(os.Stdout)
 	p, err := proto.NewGreeterPlugin(ctx, proto.WazeroRuntime(func(ctx context.Context) (wazero.Runtime, error) {
-		return wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(wazero.NewCompilationCache())), nil
+		r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(wazero.NewCompilationCache()))
+		if _, err := wasi_snapshot_preview1.Instantiate(ctx, r); err != nil {
+			return nil, err
+		}
+
+		return r, nil
 	}), proto.WazeroModuleConfig(mc))
 	require.NoError(t, err)
 
 	// Pass my host functions that are embedded into the plugin.
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm", myHostFunctions{})
-	defer plugin.Close(ctx)
 	require.NoError(t, err)
+	defer plugin.Close(ctx)
 
 	reply, err := plugin.Greet(ctx, proto.GreetRequest{
 		Name: "Sato",

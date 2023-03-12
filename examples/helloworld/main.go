@@ -22,16 +22,16 @@ func run() error {
 	}
 
 	morningPlugin, err := p.Load(ctx, "plugin-morning/morning.wasm")
-	defer morningPlugin.Close(ctx)
 	if err != nil {
 		return err
 	}
+	defer morningPlugin.Close(ctx)
 
 	eveningPlugin, err := p.Load(ctx, "plugin-evening/evening.wasm")
-	defer eveningPlugin.Close(ctx)
 	if err != nil {
 		return err
 	}
+	defer eveningPlugin.Close(ctx)
 
 	reply, err := morningPlugin.Greet(ctx, greeting.GreetRequest{
 		Name: "go-plugin",

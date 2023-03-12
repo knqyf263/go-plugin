@@ -14,7 +14,6 @@ import (
 	fmt "fmt"
 	wazero "github.com/tetratelabs/wazero"
 	api "github.com/tetratelabs/wazero/api"
-	wasi_snapshot_preview1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	sys "github.com/tetratelabs/wazero/sys"
 	os "os"
 )
@@ -28,9 +27,7 @@ type FileCatPlugin struct {
 
 func NewFileCatPlugin(ctx context.Context, opts ...wazeroConfigOption) (*FileCatPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime: func(ctx context.Context) (wazero.Runtime, error) {
-			return wazero.NewRuntime(ctx), nil
-		},
+		newRuntime:   defaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 
@@ -58,10 +55,6 @@ func (p *FileCatPlugin) Load(ctx context.Context, pluginPath string) (fileCat, e
 	// Create a new runtime so that multiple modules will not conflict
 	r, err := p.newRuntime(ctx)
 	if err != nil {
-		return nil, err
-	}
-
-	if _, err = wasi_snapshot_preview1.NewBuilder(r).Instantiate(ctx); err != nil {
 		return nil, err
 	}
 

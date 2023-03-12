@@ -124,9 +124,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		pluginName,
 	))
 	g.P(fmt.Sprintf(`o := &WazeroConfig{
-				newRuntime: func(ctx %s) (%s, error) {
-					return %s(ctx), nil
-				},
+				newRuntime: defaultWazeroRuntime(),
 				moduleConfig: %s(),
 			}
 
@@ -140,9 +138,6 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 			}, nil
 		}
 	`,
-		g.QualifiedGoIdent(contextPackage.Ident("Context")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntime")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("NewModuleConfig")),
 		pluginName,
 	))
@@ -190,10 +185,6 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}
 		%s
 
-		if _, err = %s(r).Instantiate(ctx); err != nil {
-			return nil, err
-		}
-
 		// Compile the WebAssembly module using the default configuration.
 		code, err := r.CompileModule(ctx, b)
 		if err != nil {
@@ -229,7 +220,6 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 `,
 		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
 		exportHostFunctions,
-		g.QualifiedGoIdent(wazeroWasiPackage.Ident("NewBuilder")),
 		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
 		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),
 		toSnakeCase(service.GoName),
@@ -277,7 +267,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 	// Close plugin instance
 	g.P(fmt.Sprintf(`func (p *%sPlugin) Close(ctx %s) (err error) {
-		if r := p.runtime; r!= nil {
+		if r := p.runtime; r != nil {
 			r.Close(ctx)
 		}
 		return

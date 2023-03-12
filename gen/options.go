@@ -31,6 +31,17 @@ func (gg *Generator) generateOptionsFile(f *fileInfo) {
 		}
 	}
 
+	func defaultWazeroRuntime() WazeroNewRuntime {
+		return func(ctx %s) (%s, error) {
+			r := %s(ctx)
+			if _, err := %s(ctx, r); err != nil {
+				return nil, err
+			}
+
+			return r, nil
+		}
+	}
+
 	func WazeroModuleConfig(moduleConfig %s) wazeroConfigOption {
 		return func(h *WazeroConfig) {
 			h.moduleConfig = moduleConfig
@@ -42,6 +53,10 @@ func (gg *Generator) generateOptionsFile(f *fileInfo) {
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("ModuleConfig")),
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntime")),
+		g.QualifiedGoIdent(wazeroWasiPackage.Ident("Instantiate")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("ModuleConfig")),
 	))
 }

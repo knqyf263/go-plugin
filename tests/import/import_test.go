@@ -17,8 +17,8 @@ func TestImport(t *testing.T) {
 	require.NoError(t, err)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
-	defer plugin.Close(ctx)
 	require.NoError(t, err)
+	defer plugin.Close(ctx)
 
 	got, err := plugin.Hello(ctx, foo.Request{
 		A: "Hi",

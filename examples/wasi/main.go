@@ -34,10 +34,10 @@ func run() error {
 	}
 
 	wasiPlugin, err := p.Load(ctx, "plugin/plugin.wasm")
-	defer wasiPlugin.Close(ctx)
 	if err != nil {
 		return err
 	}
+	defer wasiPlugin.Close(ctx)
 
 	reply, err := wasiPlugin.Cat(ctx, cat.FileCatRequest{
 		FilePath: "testdata/hello.txt",

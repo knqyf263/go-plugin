@@ -22,8 +22,8 @@ func TestWellKnownTypes(t *testing.T) {
 	require.NoError(t, err)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
-	defer plugin.Close(ctx)
 	require.NoError(t, err)
+	defer plugin.Close(ctx)
 
 	b := time.Date(2022, 1, 2, 3, 4, 5, 6, time.UTC)
 	c, err := structpb.NewValue(map[string]interface{}{
@@ -107,6 +107,7 @@ func TestEmpty(t *testing.T) {
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
 	require.NoError(t, err)
+	defer plugin.Close(ctx)
 
 	got, err := plugin.DoNothing(ctx, emptypb.Empty{})
 	require.NoError(t, err)

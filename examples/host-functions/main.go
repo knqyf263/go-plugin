@@ -26,10 +26,10 @@ func run() error {
 
 	// Pass my host functions that are embedded into the plugin.
 	greetingPlugin, err := p.Load(ctx, "plugin/plugin.wasm", myHostFunctions{})
-	defer greetingPlugin.Close(ctx)
 	if err != nil {
 		return err
 	}
+	defer greetingPlugin.Close(ctx)
 
 	reply, err := greetingPlugin.Greet(ctx, greeting.GreetRequest{
 		Name: "go-plugin",
