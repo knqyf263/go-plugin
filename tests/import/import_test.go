@@ -13,12 +13,12 @@ import (
 
 func TestImport(t *testing.T) {
 	ctx := context.Background()
-	p, err := foo.NewFooPlugin(ctx, foo.FooPluginOption{})
+	p, err := foo.NewFooPlugin(ctx)
 	require.NoError(t, err)
-	defer p.Close(ctx)
 
 	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
 	require.NoError(t, err)
+	defer plugin.Close(ctx)
 
 	got, err := plugin.Hello(ctx, foo.Request{
 		A: "Hi",

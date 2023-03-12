@@ -16,6 +16,8 @@ func main() {
 
 type TestPlugin struct{}
 
+var _ proto.Greeter = (*TestPlugin)(nil)
+
 func (p TestPlugin) Greet(ctx context.Context, request proto.GreetRequest) (proto.GreetReply, error) {
 	hostFunctions := proto.NewHostFunctions()
 

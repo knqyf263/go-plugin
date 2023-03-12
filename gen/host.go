@@ -48,8 +48,12 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 	// Define exporting functions
 	g.P(fmt.Sprintf(`
 		// Instantiate a Go-defined module named "env" that exports host functions.
-		func (h %s) Instantiate(ctx context.Context, r wazero.Runtime) error {
-			envBuilder := r.NewHostModuleBuilder("env")`, structName))
+		func (h %s) Instantiate(ctx %s, r %s) error {
+			envBuilder := r.NewHostModuleBuilder("env")`,
+		structName,
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
+	))
 	for _, method := range f.hostService.Methods {
 		g.P(fmt.Sprintf(`
 			envBuilder.NewFunctionBuilder().
@@ -103,66 +107,43 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 	g.P("const ", pluginName, "APIVersion = ", service.Version)
 	g.P(fmt.Sprintf(`
-		type %sOption struct {
-			Stdout %s
-			Stderr %s
-			FS     %s
-		}
-
 		type %s struct {
-			cache   %s
-			config 	%s
+			newRuntime   func(%s) (%s, error)
+			moduleConfig %s
 		}`,
 		pluginName,
-		g.QualifiedGoIdent(ioPackage.Ident("Writer")),
-		g.QualifiedGoIdent(ioPackage.Ident("Writer")),
-		g.QualifiedGoIdent(fsPackage.Ident("FS")),
-		pluginName,
-		g.QualifiedGoIdent(wazeroPackage.Ident("CompilationCache")),
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
 		g.QualifiedGoIdent(wazeroPackage.Ident("ModuleConfig")),
 	))
 
 	g.P(fmt.Sprintf(
-		"func New%s(ctx %s, opt %sOption) (*%s, error) {",
+		"func New%s(ctx %s, opts ...wazeroConfigOption) (*%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		pluginName,
-		pluginName,
 	))
-	g.P(fmt.Sprintf(`
-			// Create a new WebAssembly CompilationCache.
-			cache := %s()
-		
-			// Combine the above into our baseline config, overriding defaults.
-			config := %s().
-				// By default, I/O streams are discarded and there's no file system.
-				WithStdout(opt.Stdout).WithStderr(opt.Stderr).WithFS(opt.FS)
-			`,
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewCompilationCache")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewModuleConfig")),
-	))
+	g.P(fmt.Sprintf(`o := &WazeroConfig{
+				newRuntime: defaultWazeroRuntime(),
+				moduleConfig: %s(),
+			}
 
-	g.P("return &", pluginName, `{
-				cache: cache,
-				config:  config,
+			for _, opt := range opts {
+				opt(o)
+			}
+
+			return &%s{
+				newRuntime:   o.newRuntime,
+				moduleConfig: o.moduleConfig,
 			}, nil
 		}
-	`)
-
-	// Close plugin
-	g.P(fmt.Sprintf(`func (p *%s) Close(ctx %s) (err error) {
-	if c := p.cache; c != nil {
-		err = c.Close(ctx)
-	}
-	return
-}
-`,
+	`,
+		g.QualifiedGoIdent(wazeroPackage.Ident("NewModuleConfig")),
 		pluginName,
-		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 	))
 
 	// Plugin loading
-	structName := strings.ToLower(service.GoName[:1]) + service.GoName[1:] + "Plugin"
+	structName := strings.ToLower(service.GoName[:1]) + service.GoName[1:]
 	var hostFunctionsArg, exportHostFunctions string
 	if f.hostService != nil {
 		hostFunctionsArg = ", hostFunctions " + f.hostService.GoName
@@ -174,11 +155,22 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}`
 	}
 
+	g.P(fmt.Sprintf(`
+		type %s interface {
+			Close(ctx %s) error
+			%s
+		}
+	`,
+		structName,
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		service.GoName,
+	))
+
 	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s) (%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
 		hostFunctionsArg,
-		service.GoName,
+		structName,
 	))
 
 	g.P(fmt.Sprintf(`b, err := %s(pluginPath)
@@ -186,13 +178,12 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 			return nil, err
 		}
 
-		// Create an empty namespace so that multiple modules will not conflict
-		r := %s(ctx, %s().WithCompilationCache(p.cache))
-		%s
-
-		if _, err = %s(r).Instantiate(ctx); err != nil {
+		// Create a new runtime so that multiple modules will not conflict
+		r, err := p.newRuntime(ctx)
+		if err != nil {
 			return nil, err
 		}
+		%s
 
 		// Compile the WebAssembly module using the default configuration.
 		code, err := r.CompileModule(ctx, b)
@@ -201,7 +192,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}
 	
 		// InstantiateModule runs the "_start" function, WASI's "main".
-		module, err := r.InstantiateModule(ctx, code, p.config)
+		module, err := r.InstantiateModule(ctx, code, p.moduleConfig)
 		if err != nil {
 			// Note: Most compilers do not exit the module after running "_start",
 			// unless there was an Error. This allows you to call exported functions.
@@ -228,10 +219,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}
 `,
 		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeWithConfig")),
-		g.QualifiedGoIdent(wazeroPackage.Ident("NewRuntimeConfig")),
 		exportHostFunctions,
-		g.QualifiedGoIdent(wazeroWasiPackage.Ident("NewBuilder")),
 		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
 		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),
 		toSnakeCase(service.GoName),
@@ -262,8 +250,10 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		}`,
 		errorsNew, errorsNew))
 
-	g.P("return &", structName, "{",
-		`module: module,
+	g.P("return &", structName, "Plugin {",
+		`
+         runtime: r,
+         module: module,
 		 malloc: malloc,
 		 free: free,`)
 
@@ -275,15 +265,28 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	g.P("}")
 	g.P()
 
+	// Close plugin instance
+	g.P(fmt.Sprintf(`func (p *%sPlugin) Close(ctx %s) (err error) {
+		if r := p.runtime; r != nil {
+			r.Close(ctx)
+		}
+		return
+	}
+	`,
+		structName,
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+	))
+
 	// Struct definition
 	moduleType := g.QualifiedGoIdent(wazeroAPIPackage.Ident("Module"))
 	funcType := g.QualifiedGoIdent(wazeroAPIPackage.Ident("Function"))
-	g.P("type ", structName, " struct{")
+	g.P("type ", structName, "Plugin struct{")
 	g.P(fmt.Sprintf(`
+		runtime  %s
 		module   %s
 		malloc   %s 
 		free     %s`,
-		moduleType, funcType, funcType))
+		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")), moduleType, funcType, funcType))
 
 	for _, method := range service.Methods {
 		varName := strings.ToLower(method.GoName[:1] + method.GoName[1:])
@@ -292,7 +295,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	g.P("}")
 
 	for _, method := range service.Methods {
-		genPluginMethod(g, f, method, structName)
+		genPluginMethod(g, f, method, structName+"Plugin")
 	}
 }
 

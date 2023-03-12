@@ -20,6 +20,8 @@ func main() {
 	proto.RegisterEmptyTest(TestPlugin{})
 }
 
+var _ proto.EmptyTest = (*TestPlugin)(nil)
+
 type TestPlugin struct{}
 
 func (p TestPlugin) Test(_ context.Context, request proto.Request) (proto.Response, error) {

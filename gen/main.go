@@ -144,6 +144,7 @@ func (gg *Generator) GenerateFiles(file *protogen.File) *protogen.GeneratedFile 
 	gg.generateHostFile(f)
 	gg.generatePluginFile(f)
 	gg.generateVTFile(f)
+	gg.generateOptionsFile(f)
 	return nil
 }
 

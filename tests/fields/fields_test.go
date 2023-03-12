@@ -13,7 +13,12 @@ import (
 
 func TestFields(t *testing.T) {
 	ctx := context.Background()
-	plugin := loadPlugin(ctx, t)
+	p, err := proto.NewFieldTestPlugin(ctx)
+	require.NoError(t, err)
+
+	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
+	require.NoError(t, err)
+	defer plugin.Close(ctx)
 
 	res, err := plugin.TestEmptyInput(ctx, emptypb.Empty{})
 	require.NoError(t, err)
@@ -75,7 +80,12 @@ func TestFields(t *testing.T) {
 
 func TestErrorResponse(t *testing.T) {
 	ctx := context.Background()
-	plugin := loadPlugin(ctx, t)
+	p, err := proto.NewFieldTestPlugin(ctx)
+	require.NoError(t, err)
+
+	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
+	require.NoError(t, err)
+	defer plugin.Close(ctx)
 
 	for _, tt := range []struct {
 		name       string
@@ -93,15 +103,4 @@ func TestErrorResponse(t *testing.T) {
 			require.Equal(t, err.Error(), tt.errMessage)
 		})
 	}
-}
-
-func loadPlugin(ctx context.Context, t *testing.T) proto.FieldTest {
-	p, err := proto.NewFieldTestPlugin(ctx, proto.FieldTestPluginOption{})
-	require.NoError(t, err)
-	defer p.Close(ctx)
-
-	plugin, err := p.Load(ctx, "plugin/plugin.wasm")
-	require.NoError(t, err)
-
-	return plugin
 }
