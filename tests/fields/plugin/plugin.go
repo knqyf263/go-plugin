@@ -19,12 +19,12 @@ var _ proto.FieldTest = (*TestPlugin)(nil)
 
 type TestPlugin struct{}
 
-func (p TestPlugin) TestEmptyInput(_ context.Context, _ emptypb.Empty) (proto.TestEmptyInputResponse, error) {
-	return proto.TestEmptyInputResponse{Ok: true}, nil
+func (p TestPlugin) TestEmptyInput(_ context.Context, _ *emptypb.Empty) (*proto.TestEmptyInputResponse, error) {
+	return &proto.TestEmptyInputResponse{Ok: true}, nil
 }
 
-func (p TestPlugin) Test(_ context.Context, request proto.Request) (proto.Response, error) {
-	return proto.Response{
+func (p TestPlugin) Test(_ context.Context, request *proto.Request) (*proto.Response, error) {
+	return &proto.Response{
 		A: request.GetA() * 2,
 		B: request.GetB() * 2,
 		C: request.GetC() * 2,
@@ -59,6 +59,6 @@ func (p TestPlugin) Test(_ context.Context, request proto.Request) (proto.Respon
 	}, nil
 }
 
-func (p TestPlugin) TestError(_ context.Context, request proto.ErrorRequest) (proto.Response, error) {
-	return proto.Response{}, errors.New(request.ErrText)
+func (p TestPlugin) TestError(_ context.Context, request *proto.ErrorRequest) (*proto.Response, error) {
+	return nil, errors.New(request.ErrText)
 }

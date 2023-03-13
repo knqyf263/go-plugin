@@ -30,7 +30,7 @@ func RegisterFieldTest(p FieldTest) {
 //export field_test_test
 func _field_test_test(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req Request
+	req := &Request{}
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}
@@ -54,7 +54,7 @@ func _field_test_test(ptr, size uint32) uint64 {
 //export field_test_test_empty_input
 func _field_test_test_empty_input(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req emptypb.Empty
+	req := &emptypb.Empty{}
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}
@@ -78,7 +78,7 @@ func _field_test_test_empty_input(ptr, size uint32) uint64 {
 //export field_test_test_error
 func _field_test_test_error(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req ErrorRequest
+	req := &ErrorRequest{}
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}

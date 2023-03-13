@@ -43,7 +43,7 @@ func TestWellKnownTypes(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	got, err := plugin.Test(ctx, proto.Request{
+	got, err := plugin.Test(ctx, &proto.Request{
 		// duration
 		A: durationpb.New(1 * time.Hour),
 
@@ -83,7 +83,7 @@ func TestWellKnownTypes(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	want := proto.Response{
+	want := &proto.Response{
 		A: durationpb.New(2 * time.Minute),
 		B: timestamppb.New(b.Add(1 * time.Hour)),
 		C: c,
@@ -109,7 +109,7 @@ func TestEmpty(t *testing.T) {
 	require.NoError(t, err)
 	defer plugin.Close(ctx)
 
-	got, err := plugin.DoNothing(ctx, emptypb.Empty{})
+	got, err := plugin.DoNothing(ctx, &emptypb.Empty{})
 	require.NoError(t, err)
-	assert.Equal(t, emptypb.Empty{}, got)
+	assert.Equal(t, &emptypb.Empty{}, got)
 }

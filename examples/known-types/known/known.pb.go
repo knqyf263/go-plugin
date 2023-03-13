@@ -79,5 +79,5 @@ func (x *DiffReply) GetDuration() *durationpb.Duration {
 // The greeting service definition.
 // go:plugin type=plugin
 type WellKnown interface {
-	Diff(context.Context, DiffRequest) (DiffReply, error)
+	Diff(context.Context, *DiffRequest) (*DiffReply, error)
 }

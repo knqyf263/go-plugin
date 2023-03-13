@@ -30,7 +30,7 @@ func RegisterGreeter(p Greeter) {
 //export greeter_greet
 func _greeter_greet(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req GreetRequest
+	req := &GreetRequest{}
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}
@@ -62,10 +62,10 @@ func NewHostFunctions() HostFunctions {
 //go:linkname _parse_json
 func _parse_json(ptr uint32, size uint32) uint64
 
-func (h hostFunctions) ParseJson(ctx context.Context, request ParseJsonRequest) (response ParseJsonResponse, err error) {
+func (h hostFunctions) ParseJson(ctx context.Context, request *ParseJsonRequest) (*ParseJsonResponse, error) {
 	buf, err := request.MarshalVT()
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 	ptr, size := wasm.ByteToPtr(buf)
 	ptrSize := _parse_json(ptr, size)
@@ -74,8 +74,9 @@ func (h hostFunctions) ParseJson(ctx context.Context, request ParseJsonRequest) 
 	size = uint32(ptrSize)
 	buf = wasm.PtrToByte(ptr, size)
 
+	response := new(ParseJsonResponse)
 	if err = response.UnmarshalVT(buf); err != nil {
-		return response, err
+		return nil, err
 	}
 	return response, nil
 }

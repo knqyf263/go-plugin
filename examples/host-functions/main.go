@@ -31,7 +31,7 @@ func run() error {
 	}
 	defer greetingPlugin.Close(ctx)
 
-	reply, err := greetingPlugin.Greet(ctx, greeting.GreetRequest{
+	reply, err := greetingPlugin.Greet(ctx, &greeting.GreetRequest{
 		Name: "go-plugin",
 	})
 	if err != nil {
@@ -49,24 +49,24 @@ type myHostFunctions struct{}
 var _ greeting.HostFunctions = (*myHostFunctions)(nil)
 
 // HttpGet is embedded into the plugin and can be called by the plugin.
-func (myHostFunctions) HttpGet(ctx context.Context, request greeting.HttpGetRequest) (greeting.HttpGetResponse, error) {
+func (myHostFunctions) HttpGet(_ context.Context, request *greeting.HttpGetRequest) (*greeting.HttpGetResponse, error) {
 	resp, err := http.Get(request.Url)
 	if err != nil {
-		return greeting.HttpGetResponse{}, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	buf, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return greeting.HttpGetResponse{}, err
+		return nil, err
 	}
 
-	return greeting.HttpGetResponse{Response: buf}, nil
+	return &greeting.HttpGetResponse{Response: buf}, nil
 }
 
 // Log is embedded into the plugin and can be called by the plugin.
-func (myHostFunctions) Log(ctx context.Context, request greeting.LogRequest) (emptypb.Empty, error) {
+func (myHostFunctions) Log(_ context.Context, request *greeting.LogRequest) (*emptypb.Empty, error) {
 	// Use the host logger
 	log.Println(request.GetMessage())
-	return emptypb.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }

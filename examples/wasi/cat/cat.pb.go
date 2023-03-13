@@ -59,5 +59,5 @@ func (x *FileCatReply) GetContent() string {
 
 // go:plugin type=plugin
 type FileCat interface {
-	Cat(context.Context, FileCatRequest) (FileCatReply, error)
+	Cat(context.Context, *FileCatRequest) (*FileCatReply, error)
 }

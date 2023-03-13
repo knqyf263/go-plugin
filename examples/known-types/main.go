@@ -44,7 +44,7 @@ func run() error {
 
 	start := timestamppb.Now()
 	end := timestamppb.New(start.AsTime().Add(1 * time.Hour))
-	reply, err := plugin.Diff(ctx, known.DiffRequest{
+	reply, err := plugin.Diff(ctx, &known.DiffRequest{
 		Value: value,
 		Start: start,
 		End:   end,

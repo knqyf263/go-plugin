@@ -33,7 +33,7 @@ func run() error {
 	}
 	defer eveningPlugin.Close(ctx)
 
-	reply, err := morningPlugin.Greet(ctx, greeting.GreetRequest{
+	reply, err := morningPlugin.Greet(ctx, &greeting.GreetRequest{
 		Name: "go-plugin",
 	})
 	if err != nil {
@@ -42,7 +42,7 @@ func run() error {
 
 	fmt.Println(reply.GetMessage())
 
-	reply, err = eveningPlugin.Greet(ctx, greeting.GreetRequest{
+	reply, err = eveningPlugin.Greet(ctx, &greeting.GreetRequest{
 		Name: "go-plugin",
 	})
 	if err != nil {

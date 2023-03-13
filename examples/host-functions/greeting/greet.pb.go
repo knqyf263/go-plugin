@@ -121,14 +121,14 @@ func (x *LogRequest) GetMessage() string {
 // go:plugin type=plugin version=1
 type Greeter interface {
 	// Sends a greeting
-	Greet(context.Context, GreetRequest) (GreetReply, error)
+	Greet(context.Context, *GreetRequest) (*GreetReply, error)
 }
 
 // The host functions embedded into the plugin
 // go:plugin type=host
 type HostFunctions interface {
 	// Sends a HTTP GET request
-	HttpGet(context.Context, HttpGetRequest) (HttpGetResponse, error)
+	HttpGet(context.Context, *HttpGetRequest) (*HttpGetResponse, error)
 	// Shows a log message
-	Log(context.Context, LogRequest) (emptypb.Empty, error)
+	Log(context.Context, *LogRequest) (*emptypb.Empty, error)
 }

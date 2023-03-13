@@ -20,11 +20,11 @@ func TestImport(t *testing.T) {
 	require.NoError(t, err)
 	defer plugin.Close(ctx)
 
-	got, err := plugin.Hello(ctx, foo.Request{
+	got, err := plugin.Hello(ctx, &foo.Request{
 		A: "Hi",
 	})
 
-	want := bar.Reply{
+	want := &bar.Reply{
 		A: "Hi, bar",
 	}
 	assert.Equal(t, want, got)

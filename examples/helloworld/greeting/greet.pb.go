@@ -63,5 +63,5 @@ func (x *GreetReply) GetMessage() string {
 // go:plugin type=plugin version=1
 type Greeter interface {
 	// Sends a greeting
-	Greet(context.Context, GreetRequest) (GreetReply, error)
+	Greet(context.Context, *GreetRequest) (*GreetReply, error)
 }

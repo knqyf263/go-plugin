@@ -18,18 +18,18 @@ type TestPlugin struct{}
 
 var _ proto.Greeter = (*TestPlugin)(nil)
 
-func (p TestPlugin) Greet(ctx context.Context, request proto.GreetRequest) (proto.GreetReply, error) {
+func (p TestPlugin) Greet(ctx context.Context, request *proto.GreetRequest) (*proto.GreetReply, error) {
 	hostFunctions := proto.NewHostFunctions()
 
 	// Call the host function to parse JSON
-	resp, err := hostFunctions.ParseJson(ctx, proto.ParseJsonRequest{
+	resp, err := hostFunctions.ParseJson(ctx, &proto.ParseJsonRequest{
 		Content: []byte(`{"name": "Yamada", "age": 20}`),
 	})
 	if err != nil {
-		return proto.GreetReply{}, err
+		return nil, err
 	}
 
-	return proto.GreetReply{
+	return &proto.GreetReply{
 		Message: fmt.Sprintf("Hello, %s. This is %s (age %d).",
 			request.GetName(), resp.GetResponse().GetName(), resp.GetResponse().GetAge()),
 	}, nil

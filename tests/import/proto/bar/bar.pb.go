@@ -59,5 +59,5 @@ func (x *Reply) GetA() string {
 
 // go:plugin type=plugin version=1
 type Bar interface {
-	Hello(context.Context, Request) (Reply, error)
+	Hello(context.Context, *Request) (*Reply, error)
 }

@@ -29,7 +29,7 @@ func RegisterFoo(p Foo) {
 //export foo_hello
 func _foo_hello(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req Request
+	req := &Request{}
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}

@@ -724,8 +724,8 @@ func genServiceInterface(g *protogen.GeneratedFile, f *fileInfo, s *serviceInfo)
 func genServiceInterfaceMethod(g *protogen.GeneratedFile, f *fileInfo, s *serviceInfo) {
 	for _, method := range s.Methods {
 		g.P(method.Comments.Leading, method.GoName,
-			"(", g.QualifiedGoIdent(contextPackage.Ident("Context")), ", ", g.QualifiedGoIdent(method.Input.GoIdent), ") ",
-			"(", g.QualifiedGoIdent(method.Output.GoIdent), ", error)")
+			"(", g.QualifiedGoIdent(contextPackage.Ident("Context")), ", *", g.QualifiedGoIdent(method.Input.GoIdent), ") ",
+			"(*", g.QualifiedGoIdent(method.Output.GoIdent), ", error)")
 	}
 }
 

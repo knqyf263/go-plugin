@@ -129,10 +129,10 @@ type greeterPlugin struct {
 	greet   api.Function
 }
 
-func (p *greeterPlugin) Greet(ctx context.Context, request GreetRequest) (response GreetReply, err error) {
+func (p *greeterPlugin) Greet(ctx context.Context, request *GreetRequest) (*GreetReply, error) {
 	data, err := request.MarshalVT()
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 	dataSize := uint64(len(data))
 
@@ -141,7 +141,7 @@ func (p *greeterPlugin) Greet(ctx context.Context, request GreetRequest) (respon
 	if dataSize != 0 {
 		results, err := p.malloc.Call(ctx, dataSize)
 		if err != nil {
-			return response, err
+			return nil, err
 		}
 		dataPtr = results[0]
 		// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
@@ -150,13 +150,13 @@ func (p *greeterPlugin) Greet(ctx context.Context, request GreetRequest) (respon
 
 		// The pointer is a linear memory offset, which is where we write the name.
 		if !p.module.Memory().Write(uint32(dataPtr), data) {
-			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
+			return nil, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
 		}
 	}
 
 	ptrSize, err := p.greet.Call(ctx, dataPtr, dataSize)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	// Note: This pointer is still owned by TinyGo, so don't try to free it!
@@ -171,16 +171,17 @@ func (p *greeterPlugin) Greet(ctx context.Context, request GreetRequest) (respon
 	// The pointer is a linear memory offset, which is where we write the name.
 	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
-		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
+		return nil, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
 			resPtr, resSize, p.module.Memory().Size())
 	}
 
 	if isErrResponse {
-		return response, errors.New(string(bytes))
+		return nil, errors.New(string(bytes))
 	}
 
+	response := new(GreetReply)
 	if err = response.UnmarshalVT(bytes); err != nil {
-		return response, err
+		return nil, err
 	}
 
 	return response, nil

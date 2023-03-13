@@ -32,7 +32,7 @@ func TestHostFunctions(t *testing.T) {
 	require.NoError(t, err)
 	defer plugin.Close(ctx)
 
-	reply, err := plugin.Greet(ctx, proto.GreetRequest{
+	reply, err := plugin.Greet(ctx, &proto.GreetRequest{
 		Name: "Sato",
 	})
 	require.NoError(t, err)
@@ -47,11 +47,11 @@ type myHostFunctions struct{}
 var _ proto.HostFunctions = (*myHostFunctions)(nil)
 
 // ParseJson is embedded into the plugin and can be called by the plugin.
-func (myHostFunctions) ParseJson(_ context.Context, request proto.ParseJsonRequest) (proto.ParseJsonResponse, error) {
+func (myHostFunctions) ParseJson(_ context.Context, request *proto.ParseJsonRequest) (*proto.ParseJsonResponse, error) {
 	var person proto.Person
 	if err := json.Unmarshal(request.GetContent(), &person); err != nil {
-		return proto.ParseJsonResponse{}, err
+		return nil, err
 	}
 
-	return proto.ParseJsonResponse{Response: &person}, nil
+	return &proto.ParseJsonResponse{Response: &person}, nil
 }

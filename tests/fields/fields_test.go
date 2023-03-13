@@ -20,11 +20,11 @@ func TestFields(t *testing.T) {
 	require.NoError(t, err)
 	defer plugin.Close(ctx)
 
-	res, err := plugin.TestEmptyInput(ctx, emptypb.Empty{})
+	res, err := plugin.TestEmptyInput(ctx, &emptypb.Empty{})
 	require.NoError(t, err)
 	require.True(t, res.GetOk())
 
-	got, err := plugin.Test(ctx, proto.Request{
+	got, err := plugin.Test(ctx, &proto.Request{
 		A: 1.2,
 		B: 3.4,
 		C: 5,
@@ -50,7 +50,7 @@ func TestFields(t *testing.T) {
 		S: proto.Enum_A,
 	})
 
-	want := proto.Response{
+	want := &proto.Response{
 		A: 2.4,
 		B: 6.8,
 		C: 10,
@@ -98,7 +98,7 @@ func TestErrorResponse(t *testing.T) {
 		"error from plugin",
 	}} {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := plugin.TestError(ctx, proto.ErrorRequest{ErrText: tt.errMessage})
+			_, err := plugin.TestError(ctx, &proto.ErrorRequest{ErrText: tt.errMessage})
 			require.Error(t, err)
 			require.Equal(t, err.Error(), tt.errMessage)
 		})

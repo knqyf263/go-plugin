@@ -128,11 +128,11 @@ func (x *Person) GetAge() int64 {
 // go:plugin type=plugin version=1
 type Greeter interface {
 	// Sends a greeting
-	Greet(context.Context, GreetRequest) (GreetReply, error)
+	Greet(context.Context, *GreetRequest) (*GreetReply, error)
 }
 
 // The host functions embedded into the plugin
 // go:plugin type=host
 type HostFunctions interface {
-	ParseJson(context.Context, ParseJsonRequest) (ParseJsonResponse, error)
+	ParseJson(context.Context, *ParseJsonRequest) (*ParseJsonResponse, error)
 }

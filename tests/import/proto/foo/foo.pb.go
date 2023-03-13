@@ -41,5 +41,5 @@ func (x *Request) GetA() string {
 
 // go:plugin type=plugin version=1
 type Foo interface {
-	Hello(context.Context, Request) (bar.Reply, error)
+	Hello(context.Context, *Request) (*bar.Reply, error)
 }

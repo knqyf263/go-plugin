@@ -29,7 +29,7 @@ func RegisterFileCat(p FileCat) {
 //export file_cat_cat
 func _file_cat_cat(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req FileCatRequest
+	req := &FileCatRequest{}
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}
