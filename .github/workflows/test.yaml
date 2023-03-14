@@ -10,7 +10,7 @@ on:
   pull_request:
 env:
   GO_VERSION: "1.18"
-  PROTOC_VERSION: "21.5"
+  PROTOC_VERSION: "21.12"
 
 jobs:
   test:
@@ -20,9 +20,9 @@ jobs:
       fail-fast: false
       matrix:
         tinygo-version:
-          - "0.24.0"
           - "0.25.0"
           - "0.26.0"
+          - "0.27.0"
 
     steps:
       - uses: actions/checkout@v3
