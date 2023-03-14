@@ -29,7 +29,7 @@ func RegisterWellKnown(p WellKnown) {
 //export well_known_diff
 func _well_known_diff(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	req := &DiffRequest{}
+	req := new(DiffRequest)
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}

@@ -58,7 +58,7 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		g.P("func _", exportedName, "(ptr, size uint32) uint64 {")
 		g.P("b := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("PtrToByte")), "(ptr, size)")
 
-		g.P("req := &", g.QualifiedGoIdent(method.Input.GoIdent), "{}")
+		g.P("req := new(", g.QualifiedGoIdent(method.Input.GoIdent), ")")
 		g.P(`if err := req.UnmarshalVT(b); err != nil {
 						return 0
 					  }`)

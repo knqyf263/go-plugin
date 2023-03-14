@@ -29,7 +29,7 @@ func RegisterGreeter(p Greeter) {
 //export greeter_greet
 func _greeter_greet(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	req := &GreetRequest{}
+	req := new(GreetRequest)
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}

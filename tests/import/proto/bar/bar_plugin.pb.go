@@ -29,7 +29,7 @@ func RegisterBar(p Bar) {
 //export bar_hello
 func _bar_hello(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	req := &Request{}
+	req := new(Request)
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}
