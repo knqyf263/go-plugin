@@ -31,7 +31,7 @@ func RegisterGreeter(p Greeter) {
 //export greeter_greet
 func _greeter_greet(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req GreetRequest
+	req := new(GreetRequest)
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}
@@ -63,10 +63,10 @@ func NewHostFunctions() HostFunctions {
 //go:linkname _http_get
 func _http_get(ptr uint32, size uint32) uint64
 
-func (h hostFunctions) HttpGet(ctx context.Context, request HttpGetRequest) (response HttpGetResponse, err error) {
+func (h hostFunctions) HttpGet(ctx context.Context, request *HttpGetRequest) (*HttpGetResponse, error) {
 	buf, err := request.MarshalVT()
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 	ptr, size := wasm.ByteToPtr(buf)
 	ptrSize := _http_get(ptr, size)
@@ -75,8 +75,9 @@ func (h hostFunctions) HttpGet(ctx context.Context, request HttpGetRequest) (res
 	size = uint32(ptrSize)
 	buf = wasm.PtrToByte(ptr, size)
 
+	response := new(HttpGetResponse)
 	if err = response.UnmarshalVT(buf); err != nil {
-		return response, err
+		return nil, err
 	}
 	return response, nil
 }
@@ -86,10 +87,10 @@ func (h hostFunctions) HttpGet(ctx context.Context, request HttpGetRequest) (res
 //go:linkname _log
 func _log(ptr uint32, size uint32) uint64
 
-func (h hostFunctions) Log(ctx context.Context, request LogRequest) (response emptypb.Empty, err error) {
+func (h hostFunctions) Log(ctx context.Context, request *LogRequest) (*emptypb.Empty, error) {
 	buf, err := request.MarshalVT()
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 	ptr, size := wasm.ByteToPtr(buf)
 	ptrSize := _log(ptr, size)
@@ -98,8 +99,9 @@ func (h hostFunctions) Log(ctx context.Context, request LogRequest) (response em
 	size = uint32(ptrSize)
 	buf = wasm.PtrToByte(ptr, size)
 
+	response := new(emptypb.Empty)
 	if err = response.UnmarshalVT(buf); err != nil {
-		return response, err
+		return nil, err
 	}
 	return response, nil
 }

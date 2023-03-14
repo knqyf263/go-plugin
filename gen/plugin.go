@@ -58,7 +58,7 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		g.P("func _", exportedName, "(ptr, size uint32) uint64 {")
 		g.P("b := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("PtrToByte")), "(ptr, size)")
 
-		g.P("var req ", g.QualifiedGoIdent(method.Input.GoIdent))
+		g.P("req := new(", g.QualifiedGoIdent(method.Input.GoIdent), ")")
 		g.P(`if err := req.UnmarshalVT(b); err != nil {
 						return 0
 					  }`)
@@ -108,10 +108,10 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		//go:linkname _%s
 		func _%s(ptr uint32, size uint32) uint64
 
-		func (h %s) %s(ctx %s, request %s) (response %s, err error) {
+		func (h %s) %s(ctx %s, request *%s) (*%s, error) {
 			buf, err := request.MarshalVT()
 			if err != nil {
-				return response, err
+				return nil, err
 			}
 			ptr, size := %s(buf)
 			ptrSize := _%s(ptr, size)
@@ -120,8 +120,9 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			size = uint32(ptrSize)
 			buf = %s(ptr, size)
 
+			response := new(%s)
 			if err = response.UnmarshalVT(buf); err != nil {
-				return response, err
+				return nil, err
 			}
 			return response, nil
 		}`,
@@ -132,6 +133,7 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			g.QualifiedGoIdent(pluginWasmPackage.Ident("ByteToPtr")),
 			importedName,
 			g.QualifiedGoIdent(pluginWasmPackage.Ident("PtrToByte")),
+			g.QualifiedGoIdent(method.Output.GoIdent),
 		))
 	}
 }

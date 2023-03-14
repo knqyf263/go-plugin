@@ -24,12 +24,12 @@ var _ proto.EmptyTest = (*TestPlugin)(nil)
 
 type TestPlugin struct{}
 
-func (p TestPlugin) Test(_ context.Context, request proto.Request) (proto.Response, error) {
+func (p TestPlugin) Test(_ context.Context, request *proto.Request) (*proto.Response, error) {
 	c, err := p.GetC(request.GetC())
 	if err != nil {
-		return proto.Response{}, err
+		return nil, err
 	}
-	return proto.Response{
+	return &proto.Response{
 		A: durationpb.New(2 * time.Minute),
 		B: timestamppb.New(request.GetB().AsTime().Add(request.GetA().AsDuration())),
 		C: c,
@@ -54,6 +54,6 @@ func (p TestPlugin) GetC(v *structpb.Value) (*structpb.Value, error) {
 	return structpb.NewValue(c)
 }
 
-func (p TestPlugin) DoNothing(_ context.Context, _ emptypb.Empty) (emptypb.Empty, error) {
-	return emptypb.Empty{}, nil
+func (p TestPlugin) DoNothing(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, nil
 }

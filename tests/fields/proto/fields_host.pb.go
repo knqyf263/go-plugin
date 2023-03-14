@@ -142,10 +142,10 @@ type fieldTestPlugin struct {
 	testerror      api.Function
 }
 
-func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response Response, err error) {
+func (p *fieldTestPlugin) Test(ctx context.Context, request *Request) (*Response, error) {
 	data, err := request.MarshalVT()
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 	dataSize := uint64(len(data))
 
@@ -154,7 +154,7 @@ func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response R
 	if dataSize != 0 {
 		results, err := p.malloc.Call(ctx, dataSize)
 		if err != nil {
-			return response, err
+			return nil, err
 		}
 		dataPtr = results[0]
 		// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
@@ -163,13 +163,13 @@ func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response R
 
 		// The pointer is a linear memory offset, which is where we write the name.
 		if !p.module.Memory().Write(uint32(dataPtr), data) {
-			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
+			return nil, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
 		}
 	}
 
 	ptrSize, err := p.test.Call(ctx, dataPtr, dataSize)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	// Note: This pointer is still owned by TinyGo, so don't try to free it!
@@ -184,24 +184,25 @@ func (p *fieldTestPlugin) Test(ctx context.Context, request Request) (response R
 	// The pointer is a linear memory offset, which is where we write the name.
 	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
-		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
+		return nil, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
 			resPtr, resSize, p.module.Memory().Size())
 	}
 
 	if isErrResponse {
-		return response, errors.New(string(bytes))
+		return nil, errors.New(string(bytes))
 	}
 
+	response := new(Response)
 	if err = response.UnmarshalVT(bytes); err != nil {
-		return response, err
+		return nil, err
 	}
 
 	return response, nil
 }
-func (p *fieldTestPlugin) TestEmptyInput(ctx context.Context, request emptypb.Empty) (response TestEmptyInputResponse, err error) {
+func (p *fieldTestPlugin) TestEmptyInput(ctx context.Context, request *emptypb.Empty) (*TestEmptyInputResponse, error) {
 	data, err := request.MarshalVT()
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 	dataSize := uint64(len(data))
 
@@ -210,7 +211,7 @@ func (p *fieldTestPlugin) TestEmptyInput(ctx context.Context, request emptypb.Em
 	if dataSize != 0 {
 		results, err := p.malloc.Call(ctx, dataSize)
 		if err != nil {
-			return response, err
+			return nil, err
 		}
 		dataPtr = results[0]
 		// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
@@ -219,13 +220,13 @@ func (p *fieldTestPlugin) TestEmptyInput(ctx context.Context, request emptypb.Em
 
 		// The pointer is a linear memory offset, which is where we write the name.
 		if !p.module.Memory().Write(uint32(dataPtr), data) {
-			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
+			return nil, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
 		}
 	}
 
 	ptrSize, err := p.testemptyinput.Call(ctx, dataPtr, dataSize)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	// Note: This pointer is still owned by TinyGo, so don't try to free it!
@@ -240,24 +241,25 @@ func (p *fieldTestPlugin) TestEmptyInput(ctx context.Context, request emptypb.Em
 	// The pointer is a linear memory offset, which is where we write the name.
 	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
-		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
+		return nil, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
 			resPtr, resSize, p.module.Memory().Size())
 	}
 
 	if isErrResponse {
-		return response, errors.New(string(bytes))
+		return nil, errors.New(string(bytes))
 	}
 
+	response := new(TestEmptyInputResponse)
 	if err = response.UnmarshalVT(bytes); err != nil {
-		return response, err
+		return nil, err
 	}
 
 	return response, nil
 }
-func (p *fieldTestPlugin) TestError(ctx context.Context, request ErrorRequest) (response Response, err error) {
+func (p *fieldTestPlugin) TestError(ctx context.Context, request *ErrorRequest) (*Response, error) {
 	data, err := request.MarshalVT()
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 	dataSize := uint64(len(data))
 
@@ -266,7 +268,7 @@ func (p *fieldTestPlugin) TestError(ctx context.Context, request ErrorRequest) (
 	if dataSize != 0 {
 		results, err := p.malloc.Call(ctx, dataSize)
 		if err != nil {
-			return response, err
+			return nil, err
 		}
 		dataPtr = results[0]
 		// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
@@ -275,13 +277,13 @@ func (p *fieldTestPlugin) TestError(ctx context.Context, request ErrorRequest) (
 
 		// The pointer is a linear memory offset, which is where we write the name.
 		if !p.module.Memory().Write(uint32(dataPtr), data) {
-			return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
+			return nil, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
 		}
 	}
 
 	ptrSize, err := p.testerror.Call(ctx, dataPtr, dataSize)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	// Note: This pointer is still owned by TinyGo, so don't try to free it!
@@ -296,16 +298,17 @@ func (p *fieldTestPlugin) TestError(ctx context.Context, request ErrorRequest) (
 	// The pointer is a linear memory offset, which is where we write the name.
 	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
-		return response, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
+		return nil, fmt.Errorf("Memory.Read(%d, %d) out of range of memory size %d",
 			resPtr, resSize, p.module.Memory().Size())
 	}
 
 	if isErrResponse {
-		return response, errors.New(string(bytes))
+		return nil, errors.New(string(bytes))
 	}
 
+	response := new(Response)
 	if err = response.UnmarshalVT(bytes); err != nil {
-		return response, err
+		return nil, err
 	}
 
 	return response, nil

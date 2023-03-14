@@ -39,7 +39,7 @@ func run() error {
 	}
 	defer wasiPlugin.Close(ctx)
 
-	reply, err := wasiPlugin.Cat(ctx, cat.FileCatRequest{
+	reply, err := wasiPlugin.Cat(ctx, &cat.FileCatRequest{
 		FilePath: "testdata/hello.txt",
 	})
 	if err != nil {

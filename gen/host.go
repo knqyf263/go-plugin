@@ -83,7 +83,7 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		g.P("buf, err := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("ReadMemory")), "(m.Memory(), offset, size)")
 		g.P(errorHandling)
 
-		g.P("var request ", g.QualifiedGoIdent(method.Input.GoIdent))
+		g.P("request := new(", g.QualifiedGoIdent(method.Input.GoIdent), ")")
 		g.P(`err = request.UnmarshalVT(buf)`)
 		g.P(errorHandling)
 
@@ -301,19 +301,19 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Method, structName string) {
 	g.P("func (p *", structName, ")", method.GoName, "(ctx ", g.QualifiedGoIdent(contextPackage.Ident("Context")),
-		", request ", g.QualifiedGoIdent(method.Input.GoIdent), ")",
-		"(response ", g.QualifiedGoIdent(method.Output.GoIdent), ", err error) {")
+		", request *", g.QualifiedGoIdent(method.Input.GoIdent), ")",
+		"(*", g.QualifiedGoIdent(method.Output.GoIdent), ", error) {")
 
-	errorHandling := "if err != nil {return response , err}"
+	errorHandling := "if err != nil {return nil , err}"
 	g.P("data, err := request.MarshalVT()")
 	g.P(errorHandling)
 	g.P("dataSize := uint64(len(data))")
-	g.P(`
+	g.P(fmt.Sprintf(`
 			var dataPtr uint64
 			// If the input data is not empty, we must allocate the in-Wasm memory to store it, and pass to the plugin.
 			if dataSize != 0 {
 				results, err := p.malloc.Call(ctx, dataSize)
-				if err != nil {return response , err}
+				%s
 				dataPtr = results[0]
 				// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
 				// So, we have to free it when finished
@@ -321,10 +321,11 @@ func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Me
 
 				// The pointer is a linear memory offset, which is where we write the name.
 				if !p.module.Memory().Write(uint32(dataPtr), data) {
-					return response, fmt.Errorf("Memory.Write(%d, %d) out of range of memory size %d", dataPtr, dataSize, p.module.Memory().Size())
+					return nil, fmt.Errorf("Memory.Write(%%d, %%d) out of range of memory size %%d", dataPtr, dataSize, p.module.Memory().Size())
 				}
 			}
-`)
+`, errorHandling))
+
 	g.P("ptrSize, err := p.", strings.ToLower(method.GoName[:1]+method.GoName[1:]),
 		".Call(ctx, dataPtr, dataSize)")
 	g.P(errorHandling)
@@ -341,22 +342,24 @@ func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Me
 			// The pointer is a linear memory offset, which is where we write the name.
 			bytes, ok := p.module.Memory().Read(resPtr, resSize)
 			if !ok {
-				return response, fmt.Errorf("Memory.Read(%%d, %%d) out of range of memory size %%d",
+				return nil, fmt.Errorf("Memory.Read(%%d, %%d) out of range of memory size %%d",
 					resPtr, resSize, p.module.Memory().Size())
 			}
 
 			if isErrResponse {
-				return response, %s(string(bytes))
+				return nil, %s(string(bytes))
 			}
 
+			response := new(%s)
 			if err = response.UnmarshalVT(bytes); err != nil {
-				return response, err
+				return nil, err
 			}
 
 			return response, nil`,
 		ErrorMaskBit,
 		ErrorMaskBit,
-		g.QualifiedGoIdent(errorsPackage.Ident("New"))),
+		g.QualifiedGoIdent(errorsPackage.Ident("New")),
+		g.QualifiedGoIdent(method.Output.GoIdent)),
 	)
 	g.P("}")
 }

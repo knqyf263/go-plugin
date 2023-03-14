@@ -244,10 +244,10 @@ func (x *Response) GetL() *wrapperspb.UInt64Value {
 
 // go:plugin type=plugin version=1
 type KnownTypesTest interface {
-	Test(context.Context, Request) (Response, error)
+	Test(context.Context, *Request) (*Response, error)
 }
 
 // go:plugin type=plugin version=1
 type EmptyTest interface {
-	DoNothing(context.Context, emptypb.Empty) (emptypb.Empty, error)
+	DoNothing(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 }

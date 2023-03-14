@@ -30,7 +30,7 @@ func RegisterKnownTypesTest(p KnownTypesTest) {
 //export known_types_test_test
 func _known_types_test_test(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req Request
+	req := new(Request)
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}
@@ -67,7 +67,7 @@ func RegisterEmptyTest(p EmptyTest) {
 //export empty_test_do_nothing
 func _empty_test_do_nothing(ptr, size uint32) uint64 {
 	b := wasm.PtrToByte(ptr, size)
-	var req emptypb.Empty
+	req := new(emptypb.Empty)
 	if err := req.UnmarshalVT(b); err != nil {
 		return 0
 	}

@@ -19,13 +19,13 @@ type WellKnownPlugin struct{}
 
 var _ known.WellKnown = (*WellKnownPlugin)(nil)
 
-func (p WellKnownPlugin) Diff(_ context.Context, request known.DiffRequest) (known.DiffReply, error) {
+func (p WellKnownPlugin) Diff(_ context.Context, request *known.DiffRequest) (*known.DiffReply, error) {
 	value := request.GetValue().AsInterface()
 	if m, ok := value.(map[string]interface{}); ok {
 		fmt.Printf("I love %s\n", m["A"])
 		fmt.Printf("I love %s\n", m["B"])
 	}
-	return known.DiffReply{
+	return &known.DiffReply{
 		Duration: durationpb.New(request.GetEnd().AsTime().Sub(request.GetStart().AsTime())),
 	}, nil
 }

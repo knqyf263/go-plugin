@@ -18,8 +18,8 @@ type TestPlugin struct{}
 
 var _ foo.Foo = (*TestPlugin)(nil)
 
-func (p TestPlugin) Hello(_ context.Context, request foo.Request) (bar.Reply, error) {
-	return bar.Reply{
+func (p TestPlugin) Hello(_ context.Context, request *foo.Request) (*bar.Reply, error) {
+	return &bar.Reply{
 		A: request.GetA() + ", bar",
 	}, nil
 }

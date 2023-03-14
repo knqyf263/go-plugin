@@ -17,8 +17,8 @@ type GoodMorning struct{}
 
 var _ greeting.Greeter = (*GoodMorning)(nil)
 
-func (m GoodMorning) Greet(ctx context.Context, request greeting.GreetRequest) (greeting.GreetReply, error) {
-	return greeting.GreetReply{
+func (m GoodMorning) Greet(_ context.Context, request *greeting.GreetRequest) (*greeting.GreetReply, error) {
+	return &greeting.GreetReply{
 		Message: "Good morning, " + request.GetName(),
 	}, nil
 }

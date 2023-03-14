@@ -471,7 +471,7 @@ func (x *Response_Nested) GetA() string {
 
 // go:plugin type=plugin version=1
 type FieldTest interface {
-	Test(context.Context, Request) (Response, error)
-	TestEmptyInput(context.Context, emptypb.Empty) (TestEmptyInputResponse, error)
-	TestError(context.Context, ErrorRequest) (Response, error)
+	Test(context.Context, *Request) (*Response, error)
+	TestEmptyInput(context.Context, *emptypb.Empty) (*TestEmptyInputResponse, error)
+	TestError(context.Context, *ErrorRequest) (*Response, error)
 }
