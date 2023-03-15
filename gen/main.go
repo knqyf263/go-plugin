@@ -832,6 +832,7 @@ func (c trailingComment) String() string {
 type Parameter struct {
 	APIVersion int
 	Type       ServiceType
+	Module     string
 }
 
 type ServiceType string
@@ -841,6 +842,7 @@ const (
 	ServicePlugin  ServiceType = "plugin"
 	ServiceUnknown ServiceType = "unknown"
 	ServiceNone    ServiceType = "none"
+	EnvModuleName              = "env"
 )
 
 // parseParam parses a comment and extract parameters for go-plugin
@@ -849,6 +851,7 @@ func parseParam(comment string) (Parameter, error) {
 	param := Parameter{
 		APIVersion: 1,
 		Type:       ServiceNone,
+		Module:     EnvModuleName,
 	}
 	for _, line := range strings.Split(comment, "\n") {
 		line = strings.TrimPrefix(line, "//")
@@ -883,6 +886,10 @@ func parseParam(comment string) (Parameter, error) {
 					return Parameter{}, fmt.Errorf("invalid version: %w", err)
 				}
 				param.APIVersion = ver
+			case "module":
+				if param.Type == ServiceHost && len(value) > 0 {
+					param.Module = value
+				}
 			}
 		}
 	}

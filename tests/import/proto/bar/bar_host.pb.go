@@ -27,7 +27,7 @@ type BarPlugin struct {
 
 func NewBarPlugin(ctx context.Context, opts ...wazeroConfigOption) (*BarPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime:   defaultWazeroRuntime(),
+		newRuntime:   DefaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 

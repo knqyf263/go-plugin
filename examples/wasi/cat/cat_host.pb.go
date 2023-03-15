@@ -27,7 +27,7 @@ type FileCatPlugin struct {
 
 func NewFileCatPlugin(ctx context.Context, opts ...wazeroConfigOption) (*FileCatPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime:   defaultWazeroRuntime(),
+		newRuntime:   DefaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 

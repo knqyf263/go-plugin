@@ -77,7 +77,7 @@ type GreeterPlugin struct {
 
 func NewGreeterPlugin(ctx context.Context, opts ...wazeroConfigOption) (*GreeterPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime:   defaultWazeroRuntime(),
+		newRuntime:   DefaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 

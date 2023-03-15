@@ -28,7 +28,7 @@ type FooPlugin struct {
 
 func NewFooPlugin(ctx context.Context, opts ...wazeroConfigOption) (*FooPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime:   defaultWazeroRuntime(),
+		newRuntime:   DefaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 
