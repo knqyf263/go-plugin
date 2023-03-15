@@ -1,0 +1,35 @@
+syntax = "proto3";
+package host;
+
+option go_package = "github.com/knqyf263/go-plugin/tests/import-host-functions/proto";
+
+// The greeting service definition.
+// go:plugin type=plugin version=1
+service Greeter {
+  // Sends a greeting
+  rpc Greet(GreetRequest) returns (GreetReply) {}
+}
+
+// The request message containing the user's name.
+message GreetRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message GreetReply {
+  string message = 1;
+}
+
+// The host functions embedded into the plugin
+// go:plugin type=host
+service HostFunctions {
+  rpc San(SanRequest) returns (SanResponse) {}
+}
+
+message SanRequest {
+  string message = 1;
+}
+
+message SanResponse {
+  string message = 1;
+}

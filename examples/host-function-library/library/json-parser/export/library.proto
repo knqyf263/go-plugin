@@ -1,0 +1,23 @@
+syntax = "proto3";
+package host;
+
+option go_package = "github.com/knqyf263/go-plugin/examples/host-functions-library/library/json-parser/export";
+
+// Distributing host functions without plugin code
+// go:plugin type=host module=json-parser
+service ParserLibrary {
+  rpc ParseJson(ParseJsonRequest) returns (ParseJsonResponse) {}
+}
+
+message ParseJsonRequest {
+  bytes content = 1;
+}
+
+message ParseJsonResponse {
+  Person response = 1;
+}
+
+message Person {
+  string name = 1;
+  int64  age  = 2;
+}
