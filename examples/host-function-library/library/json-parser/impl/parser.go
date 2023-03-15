@@ -6,7 +6,7 @@ import (
 	"github.com/knqyf263/go-plugin/examples/host-function-library/library/json-parser/export"
 )
 
-var _ export.ParserLibrary = ParserLibraryImpl{}
+var _ export.ParserLibrary = (*ParserLibraryImpl)(nil)
 
 // ParserLibraryImpl implements export.ParserLibrary functions
 type ParserLibraryImpl struct{}
