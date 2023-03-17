@@ -17,3 +17,4 @@
 .idea
 .DS_Store
 *.wasm
+dist/

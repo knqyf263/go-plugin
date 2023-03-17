@@ -6,7 +6,7 @@ builds:
     ldflags:
       - -s -w
       - "-extldflags '-static'"
-      - -X version.Version={{.Version}}
+      - -X github.com/knqyf263/go-plugin/version.Version={{.Version}}
     env:
       - CGO_ENABLED=0
     goos:
@@ -40,6 +40,7 @@ nfpms:
 
 archives:
   -
+    rlcp: true
     format: tar.gz
     name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}"
     files:
