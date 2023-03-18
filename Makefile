@@ -2,12 +2,15 @@ GOPATH := $(shell go env GOPATH)
 GOBIN := $(if $(GOPATH),$(GOPATH)/bin,/usr/local/bin)
 
 go_sources := $(shell find cmd encoding gen genid version wasm -name "*.go")
+ifdef VERSION
+	LDFLAGS := -ldflags="-X github.com/knqyf263/go-plugin/version.Version=${VERSION}"
+endif
 
 .PHONY: build
 build: $(GOBIN)/protoc-gen-go-plugin
 
 $(GOBIN)/protoc-gen-go-plugin: $(go_sources)
-	go build -o $(GOPATH)/bin/protoc-gen-go-plugin cmd/protoc-gen-go-plugin/main.go
+	go build ${LDFLAGS} -o $(GOPATH)/bin/protoc-gen-go-plugin cmd/protoc-gen-go-plugin/main.go
 
 tinygo_examples := $(shell find examples -path "*/plugin*/*.go")
 .PHONY: build.examples
