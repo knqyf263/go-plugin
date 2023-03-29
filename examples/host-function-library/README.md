@@ -89,7 +89,7 @@ if err != nil {
 Use TinyGo to compile the plugin to Wasm.
 
 ```shell
-$ tinygo build -o plugin/plugin.wasm -scheduler=none -target=wasi --no-debug plugin/plugin.go
+$ go generate main.go
 ```
 
 ## Run
