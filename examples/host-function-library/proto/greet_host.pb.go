@@ -4,7 +4,7 @@
 // versions:
 // 	protoc-gen-go-plugin v0.1.0
 // 	protoc               v3.21.12
-// source: tests/host-functions/proto/host.proto
+// source: examples/host-function-library/proto/greet.proto
 
 package proto
 
@@ -33,26 +33,26 @@ func (h _hostFunctions) Instantiate(ctx context.Context, r wazero.Runtime) error
 	envBuilder := r.NewHostModuleBuilder("env")
 
 	envBuilder.NewFunctionBuilder().
-		WithGoModuleFunction(api.GoModuleFunc(h._ParseJson), []api.ValueType{i32, i32}, []api.ValueType{i64}).
+		WithGoModuleFunction(api.GoModuleFunc(h._San), []api.ValueType{i32, i32}, []api.ValueType{i64}).
 		WithParameterNames("offset", "size").
-		Export("parse_json")
+		Export("san")
 
 	_, err := envBuilder.Instantiate(ctx)
 	return err
 }
 
-func (h _hostFunctions) _ParseJson(ctx context.Context, m api.Module, stack []uint64) {
+func (h _hostFunctions) _San(ctx context.Context, m api.Module, stack []uint64) {
 	offset, size := uint32(stack[0]), uint32(stack[1])
 	buf, err := wasm.ReadMemory(m.Memory(), offset, size)
 	if err != nil {
 		panic(err)
 	}
-	request := new(ParseJsonRequest)
+	request := new(SanRequest)
 	err = request.UnmarshalVT(buf)
 	if err != nil {
 		panic(err)
 	}
-	resp, err := h.ParseJson(ctx, request)
+	resp, err := h.San(ctx, request)
 	if err != nil {
 		panic(err)
 	}

@@ -28,7 +28,7 @@ type FieldTestPlugin struct {
 
 func NewFieldTestPlugin(ctx context.Context, opts ...wazeroConfigOption) (*FieldTestPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime:   defaultWazeroRuntime(),
+		newRuntime:   DefaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 

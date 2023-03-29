@@ -29,7 +29,7 @@ func WazeroRuntime(newRuntime WazeroNewRuntime) wazeroConfigOption {
 	}
 }
 
-func defaultWazeroRuntime() WazeroNewRuntime {
+func DefaultWazeroRuntime() WazeroNewRuntime {
 	return func(ctx context.Context) (wazero.Runtime, error) {
 		r := wazero.NewRuntime(ctx)
 		if _, err := wasi_snapshot_preview1.Instantiate(ctx, r); err != nil {

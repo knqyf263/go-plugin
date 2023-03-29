@@ -28,7 +28,7 @@ type KnownTypesTestPlugin struct {
 
 func NewKnownTypesTestPlugin(ctx context.Context, opts ...wazeroConfigOption) (*KnownTypesTestPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime:   defaultWazeroRuntime(),
+		newRuntime:   DefaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 
@@ -197,7 +197,7 @@ type EmptyTestPlugin struct {
 
 func NewEmptyTestPlugin(ctx context.Context, opts ...wazeroConfigOption) (*EmptyTestPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime:   defaultWazeroRuntime(),
+		newRuntime:   DefaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 

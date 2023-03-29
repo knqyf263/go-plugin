@@ -4,9 +4,9 @@
 // versions:
 // 	protoc-gen-go-plugin v0.1.0
 // 	protoc               v3.21.12
-// source: examples/wasi/cat/cat.proto
+// source: examples/host-function-library/proto/greet.proto
 
-package cat
+package proto
 
 import (
 	context "context"

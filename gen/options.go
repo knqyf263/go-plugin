@@ -31,7 +31,7 @@ func (gg *Generator) generateOptionsFile(f *fileInfo) {
 		}
 	}
 
-	func defaultWazeroRuntime() WazeroNewRuntime {
+	func DefaultWazeroRuntime() WazeroNewRuntime {
 		return func(ctx %s) (%s, error) {
 			r := %s(ctx)
 			if _, err := %s(ctx, r); err != nil {

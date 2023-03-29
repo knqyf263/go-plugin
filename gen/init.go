@@ -185,6 +185,7 @@ type serviceInfo struct {
 	*protogen.Service
 	Version int
 	Type    ServiceType
+	Module  string
 }
 
 func newServiceInfo(service *protogen.Service, param Parameter) *serviceInfo {
@@ -192,6 +193,7 @@ func newServiceInfo(service *protogen.Service, param Parameter) *serviceInfo {
 		Service: service,
 		Type:    param.Type,
 		Version: param.APIVersion,
+		Module:  param.Module,
 	}
 	return x
 }

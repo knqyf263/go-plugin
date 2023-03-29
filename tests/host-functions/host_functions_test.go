@@ -6,24 +6,17 @@ import (
 	"os"
 	"testing"
 
+	"github.com/knqyf263/go-plugin/tests/host-functions/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
-
-	"github.com/knqyf263/go-plugin/tests/host-functions/proto"
 )
 
 func TestHostFunctions(t *testing.T) {
 	ctx := context.Background()
 	mc := wazero.NewModuleConfig().WithStdout(os.Stdout)
 	p, err := proto.NewGreeterPlugin(ctx, proto.WazeroRuntime(func(ctx context.Context) (wazero.Runtime, error) {
-		r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(wazero.NewCompilationCache()))
-		if _, err := wasi_snapshot_preview1.Instantiate(ctx, r); err != nil {
-			return nil, err
-		}
-
-		return r, nil
+		return proto.DefaultWazeroRuntime()(ctx)
 	}), proto.WazeroModuleConfig(mc))
 	require.NoError(t, err)
 

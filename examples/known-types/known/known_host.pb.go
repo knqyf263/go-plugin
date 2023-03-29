@@ -27,7 +27,7 @@ type WellKnownPlugin struct {
 
 func NewWellKnownPlugin(ctx context.Context, opts ...wazeroConfigOption) (*WellKnownPlugin, error) {
 	o := &WazeroConfig{
-		newRuntime:   defaultWazeroRuntime(),
+		newRuntime:   DefaultWazeroRuntime(),
 		moduleConfig: wazero.NewModuleConfig(),
 	}
 
