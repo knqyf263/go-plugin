@@ -10,11 +10,9 @@ $ protoc --go-plugin_out=. --go-plugin_opt=paths=source_relative greeting/greet.
 
 ## Compile a plugin
 Use TinyGo to compile the plugin to Wasm.
-This example contains two plugins, `plugin-morning` and `plugin-evening`.
 
 ```shell
-$ tinygo build -o plugin-morning/morning.wasm -scheduler=none -target=wasi --no-debug plugin-morning/morning.go
-$ tinygo build -o plugin-evening/evening.wasm -scheduler=none -target=wasi --no-debug plugin-evening/evening.go
+$ go generate main.go
 ```
 
 ## Run

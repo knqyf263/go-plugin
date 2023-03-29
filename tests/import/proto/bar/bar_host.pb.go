@@ -159,13 +159,17 @@ func (p *barPlugin) Hello(ctx context.Context, request *Request) (*Reply, error)
 		return nil, err
 	}
 
-	// Note: This pointer is still owned by TinyGo, so don't try to free it!
 	resPtr := uint32(ptrSize[0] >> 32)
 	resSize := uint32(ptrSize[0])
 	var isErrResponse bool
 	if (resSize & (1 << 31)) > 0 {
 		isErrResponse = true
 		resSize &^= (1 << 31)
+	}
+
+	// We don't need the memory after deserialization: make sure it is freed.
+	if resPtr != 0 {
+		defer p.free.Call(ctx, uint64(resPtr))
 	}
 
 	// The pointer is a linear memory offset, which is where we write the name.
