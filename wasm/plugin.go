@@ -4,6 +4,9 @@
 
 package wasm
 
+// #include <stdlib.h>
+import "C"
+
 import (
 	"reflect"
 	"unsafe"
@@ -22,7 +25,11 @@ func ByteToPtr(buf []byte) (uint32, uint32) {
 	if len(buf) == 0 {
 		return 0, 0
 	}
-	ptr := &buf[0]
-	unsafePtr := uintptr(unsafe.Pointer(ptr))
-	return uint32(unsafePtr), uint32(len(buf))
+
+	size := C.ulong(len(buf))
+	ptr := unsafe.Pointer(C.malloc(size))
+
+	copy(unsafe.Slice((*byte)(ptr), size), buf)
+
+	return uint32(uintptr(ptr)), uint32(len(buf))
 }

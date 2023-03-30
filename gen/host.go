@@ -347,13 +347,17 @@ func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Me
 		".Call(ctx, dataPtr, dataSize)")
 	g.P(errorHandling)
 	g.P(fmt.Sprintf(`
-			// Note: This pointer is still owned by TinyGo, so don't try to free it!
 			resPtr := uint32(ptrSize[0] >> 32)
 			resSize := uint32(ptrSize[0])
 			var isErrResponse bool
 			if (resSize & %s) > 0 {
 				isErrResponse = true
 				resSize &^= %s
+			}
+
+			// We don't need the memory after deserialization: make sure it is freed.
+			if resPtr != 0 {
+				defer p.free.Call(ctx, uint64(resPtr))     
 			}
 
 			// The pointer is a linear memory offset, which is where we write the name.
