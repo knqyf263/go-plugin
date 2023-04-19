@@ -115,6 +115,7 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			}
 			ptr, size := %s(buf)
 			ptrSize := _%s(ptr, size)
+			%s(ptr)
 
 			ptr = uint32(ptrSize >> 32)
 			size = uint32(ptrSize)
@@ -132,6 +133,7 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			g.QualifiedGoIdent(method.Output.GoIdent),
 			g.QualifiedGoIdent(pluginWasmPackage.Ident("ByteToPtr")),
 			importedName,
+			g.QualifiedGoIdent(pluginWasmPackage.Ident("FreePtr")),
 			g.QualifiedGoIdent(pluginWasmPackage.Ident("PtrToByte")),
 			g.QualifiedGoIdent(method.Output.GoIdent),
 		))

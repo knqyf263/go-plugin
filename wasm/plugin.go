@@ -33,3 +33,7 @@ func ByteToPtr(buf []byte) (uint32, uint32) {
 
 	return uint32(uintptr(ptr)), uint32(len(buf))
 }
+
+func FreePtr(ptr uint32) {
+	C.free(unsafe.Pointer(uintptr(ptr)))
+}
