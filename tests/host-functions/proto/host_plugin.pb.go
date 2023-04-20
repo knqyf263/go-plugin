@@ -69,6 +69,7 @@ func (h hostFunctions) ParseJson(ctx context.Context, request *ParseJsonRequest)
 	}
 	ptr, size := wasm.ByteToPtr(buf)
 	ptrSize := _parse_json(ptr, size)
+	wasm.FreePtr(ptr)
 
 	ptr = uint32(ptrSize >> 32)
 	size = uint32(ptrSize)

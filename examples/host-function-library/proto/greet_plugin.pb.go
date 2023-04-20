@@ -69,6 +69,7 @@ func (h hostFunctions) San(ctx context.Context, request *SanRequest) (*SanRespon
 	}
 	ptr, size := wasm.ByteToPtr(buf)
 	ptrSize := _san(ptr, size)
+	wasm.FreePtr(ptr)
 
 	ptr = uint32(ptrSize >> 32)
 	size = uint32(ptrSize)

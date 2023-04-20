@@ -70,6 +70,7 @@ func (h hostFunctions) HttpGet(ctx context.Context, request *HttpGetRequest) (*H
 	}
 	ptr, size := wasm.ByteToPtr(buf)
 	ptrSize := _http_get(ptr, size)
+	wasm.FreePtr(ptr)
 
 	ptr = uint32(ptrSize >> 32)
 	size = uint32(ptrSize)
@@ -94,6 +95,7 @@ func (h hostFunctions) Log(ctx context.Context, request *LogRequest) (*emptypb.E
 	}
 	ptr, size := wasm.ByteToPtr(buf)
 	ptrSize := _log(ptr, size)
+	wasm.FreePtr(ptr)
 
 	ptr = uint32(ptrSize >> 32)
 	size = uint32(ptrSize)
