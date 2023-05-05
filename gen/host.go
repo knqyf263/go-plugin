@@ -221,6 +221,8 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 				return nil, nil, err
 			}
 		}
+		defer module.Close(ctx)
+
 
 		// Compare API versions with the loading plugin
 		apiVersion := module.ExportedFunction("%s_api_version")
