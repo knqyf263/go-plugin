@@ -183,6 +183,143 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		service.GoName,
 	))
 
+	// Open and LoadWithCompiled Functions
+	g.P(fmt.Sprintf("func (p *%s) Open(ctx %s, pluginPath string %s) (%s, %s, error) {",
+		pluginName,
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		hostFunctionsArg,
+		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("CompiledModule")),
+	))
+
+	g.P(fmt.Sprintf(`b, err := %s(pluginPath)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Create a new runtime so that multiple modules will not conflict
+		r, err := p.newRuntime(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		%s
+
+		// Compile the WebAssembly module using the default configuration.
+		code, err := r.CompileModule(ctx, b)
+		if err != nil {
+			return nil, nil, err
+		}
+	
+		// InstantiateModule runs the "_start" function, WASI's "main".
+		module, err := r.InstantiateModule(ctx, code, p.moduleConfig)
+		if err != nil {
+			// Note: Most compilers do not exit the module after running "_start",
+			// unless there was an Error. This allows you to call exported functions.
+			if exitErr, ok := err.(*%s); ok && exitErr.ExitCode() != 0 {
+				return nil, nil, %s("unexpected exit_code: %%d", exitErr.ExitCode())
+			} else if !ok {
+				return nil, nil, err
+			}
+		}
+
+		// Compare API versions with the loading plugin
+		apiVersion := module.ExportedFunction("%s_api_version")
+		if apiVersion == nil {
+			return nil, nil, %s("%s_api_version is not exported")
+		}
+		results, err := apiVersion.Call(ctx)
+		if err != nil {
+			return nil, nil, err
+		} else if len(results) != 1 {
+			return nil, nil, %s("invalid %s_api_version signature")
+		}
+		if results[0] != %sAPIVersion {
+			return nil, nil, fmt.Errorf("API version mismatch, host: %%d, plugin: %%d", %sAPIVersion, results[0])
+		}
+`,
+		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
+		exportHostFunctions,
+		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
+		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),
+		toSnakeCase(service.GoName),
+		g.QualifiedGoIdent(errorsPackage.Ident("New")),
+		toSnakeCase(service.GoName),
+		g.QualifiedGoIdent(errorsPackage.Ident("New")),
+		toSnakeCase(service.GoName),
+		pluginName, pluginName,
+	))
+	errorsNew := g.QualifiedGoIdent(errorsPackage.Ident("New"))
+	for _, method := range service.Methods {
+		varName := strings.ToLower(method.GoName[:1] + method.GoName[1:])
+		funcName := toSnakeCase(service.GoName + method.GoName)
+		g.P(varName, `:= module.ExportedFunction("`, funcName, `")`)
+		g.P("if ", varName, `== nil { return nil, nil, `, errorsNew, `("`, funcName, ` is not exported")}`)
+	}
+	g.P("return r, code, nil")
+	g.P("}")
+	g.P()
+
+	g.P(fmt.Sprintf("func (p *%s) LoadWithCompiled(ctx %s, r %s, code %s %s) (%s, error) {",
+		pluginName,
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("Runtime")),
+		g.QualifiedGoIdent(wazeroPackage.Ident("CompiledModule")),
+		hostFunctionsArg,
+		structName,
+	))
+
+	g.P(fmt.Sprintf(`// InstantiateModule runs the "_start" function, WASI's "main".
+		module, err := r.InstantiateModule(ctx, code, p.moduleConfig)
+		if err != nil {
+			// Note: Most compilers do not exit the module after running "_start",
+			// unless there was an Error. This allows you to call exported functions.
+			if exitErr, ok := err.(*%s); ok && exitErr.ExitCode() != 0 {
+				return nil, %s("unexpected exit_code: %%d", exitErr.ExitCode())
+			} else if !ok {
+				return nil, err
+			}
+		}
+`,
+		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
+		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),
+	))
+
+	errorsNew = g.QualifiedGoIdent(errorsPackage.Ident("New"))
+	for _, method := range service.Methods {
+		varName := strings.ToLower(method.GoName[:1] + method.GoName[1:])
+		funcName := toSnakeCase(service.GoName + method.GoName)
+		g.P(varName, `:= module.ExportedFunction("`, funcName, `")`)
+		g.P("if ", varName, `== nil { return nil, `, errorsNew, `("`, funcName, ` is not exported")}`)
+	}
+
+	g.P(fmt.Sprintf(`
+		malloc := module.ExportedFunction("malloc")
+		if malloc == nil {
+			return nil, %s("malloc is not exported")
+		}
+
+		free := module.ExportedFunction("free")
+		if free == nil {
+			return nil, %s("free is not exported")
+		}`,
+		errorsNew, errorsNew))
+
+	g.P("return &", structName, "Plugin {",
+		`
+         runtime: r,
+         module: module,
+		 malloc: malloc,
+		 free: free,`)
+
+	for _, method := range service.Methods {
+		varName := strings.ToLower(method.GoName[:1] + method.GoName[1:])
+		g.P(varName, ": ", varName, ",")
+	}
+	g.P("}, nil")
+	g.P("}")
+	g.P()
+
+	// Load Function
 	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s) (%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
@@ -247,7 +384,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		pluginName, pluginName,
 	))
 
-	errorsNew := g.QualifiedGoIdent(errorsPackage.Ident("New"))
+	errorsNew = g.QualifiedGoIdent(errorsPackage.Ident("New"))
 	for _, method := range service.Methods {
 		varName := strings.ToLower(method.GoName[:1] + method.GoName[1:])
 		funcName := toSnakeCase(service.GoName + method.GoName)
