@@ -51,6 +51,7 @@ const (
 	stringsPackage = protogen.GoImportPath("strings")
 	syncPackage    = protogen.GoImportPath("sync")
 	timePackage    = protogen.GoImportPath("time")
+	bytesPackage   = protogen.GoImportPath("bytes")
 
 	knownTypesPrefix = "google.golang.org/protobuf/types/known/"
 
