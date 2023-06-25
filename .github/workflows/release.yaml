@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
 
@@ -24,7 +24,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
-          version: v1.16.1
+          version: v1.18.2
           args: release --clean --timeout 30m
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

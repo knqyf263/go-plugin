@@ -169,9 +169,7 @@ func (m *ParseJsonRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -185,9 +183,7 @@ func (m *ParseJsonResponse) SizeVT() (n int) {
 		l = m.Response.SizeVT()
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -204,9 +200,7 @@ func (m *Person) SizeVT() (n int) {
 	if m.Age != 0 {
 		n += 1 + sov(uint64(m.Age))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -490,6 +484,7 @@ func (m *Person) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skip(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

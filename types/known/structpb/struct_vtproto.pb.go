@@ -113,16 +113,13 @@ func (m *Value) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if vtmsg, ok := m.Kind.(interface {
-		MarshalToVT([]byte) (int, error)
-		SizeVT() int
+		MarshalToSizedBufferVT([]byte) (int, error)
 	}); ok {
-		{
-			size := vtmsg.SizeVT()
-			i -= size
-			if _, err := vtmsg.MarshalToVT(dAtA[i:]); err != nil {
-				return 0, err
-			}
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
 	}
 	return len(dAtA) - i, nil
 }
@@ -296,9 +293,7 @@ func (m *Struct) SizeVT() (n int) {
 			n += mapEntrySize + 1 + sov(uint64(mapEntrySize))
 		}
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -311,9 +306,7 @@ func (m *Value) SizeVT() (n int) {
 	if vtmsg, ok := m.Kind.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -390,9 +383,7 @@ func (m *ListValue) SizeVT() (n int) {
 			n += 1 + l + sov(uint64(l))
 		}
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -630,7 +621,7 @@ func (m *Value) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.Kind = &Value_NullValue{v}
+			m.Kind = &Value_NullValue{NullValue: v}
 		case 2:
 			if wireType != 1 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NumberValue", wireType)
@@ -641,7 +632,7 @@ func (m *Value) UnmarshalVT(dAtA []byte) error {
 			}
 			v = uint64(binary.LittleEndian.Uint64(dAtA[iNdEx:]))
 			iNdEx += 8
-			m.Kind = &Value_NumberValue{float64(math.Float64frombits(v))}
+			m.Kind = &Value_NumberValue{NumberValue: float64(math.Float64frombits(v))}
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StringValue", wireType)
@@ -672,7 +663,7 @@ func (m *Value) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Kind = &Value_StringValue{string(dAtA[iNdEx:postIndex])}
+			m.Kind = &Value_StringValue{StringValue: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
@@ -694,7 +685,7 @@ func (m *Value) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			b := bool(v != 0)
-			m.Kind = &Value_BoolValue{b}
+			m.Kind = &Value_BoolValue{BoolValue: b}
 		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StructValue", wireType)
@@ -733,7 +724,7 @@ func (m *Value) UnmarshalVT(dAtA []byte) error {
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Kind = &Value_StructValue{v}
+				m.Kind = &Value_StructValue{StructValue: v}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -774,7 +765,7 @@ func (m *Value) UnmarshalVT(dAtA []byte) error {
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Kind = &Value_ListValue{v}
+				m.Kind = &Value_ListValue{ListValue: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -884,6 +875,7 @@ func (m *ListValue) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skip(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

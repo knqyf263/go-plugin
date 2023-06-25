@@ -597,9 +597,7 @@ func (m *TestEmptyInputResponse) SizeVT() (n int) {
 	if m.Ok {
 		n += 2
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -613,9 +611,7 @@ func (m *Request_Nested) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -698,9 +694,7 @@ func (m *Request) SizeVT() (n int) {
 	if m.S != 0 {
 		n += 2 + sov(uint64(m.S))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -713,9 +707,7 @@ func (m *IntValue) SizeVT() (n int) {
 	if m.A != 0 {
 		n += 1 + sov(uint64(m.A))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -729,9 +721,7 @@ func (m *Response_Nested) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -814,9 +804,7 @@ func (m *Response) SizeVT() (n int) {
 	if m.S != 0 {
 		n += 2 + sov(uint64(m.S))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -830,9 +818,7 @@ func (m *ErrorRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -2298,6 +2284,7 @@ func (m *ErrorRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skip(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

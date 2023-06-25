@@ -75,9 +75,7 @@ func (m *Empty) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -138,6 +136,7 @@ func (m *Empty) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skip(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
