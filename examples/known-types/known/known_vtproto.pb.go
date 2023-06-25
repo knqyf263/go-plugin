@@ -55,10 +55,10 @@ func (m *DiffRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.End != nil {
-		if marshalto, ok := interface{}(m.End).(interface {
+		if vtmsg, ok := interface{}(m.End).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
-			size, err := marshalto.MarshalToSizedBufferVT(dAtA[:i])
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -77,10 +77,10 @@ func (m *DiffRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x1a
 	}
 	if m.Start != nil {
-		if marshalto, ok := interface{}(m.Start).(interface {
+		if vtmsg, ok := interface{}(m.Start).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
-			size, err := marshalto.MarshalToSizedBufferVT(dAtA[:i])
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -99,10 +99,10 @@ func (m *DiffRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x12
 	}
 	if m.Value != nil {
-		if marshalto, ok := interface{}(m.Value).(interface {
+		if vtmsg, ok := interface{}(m.Value).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
-			size, err := marshalto.MarshalToSizedBufferVT(dAtA[:i])
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -154,10 +154,10 @@ func (m *DiffReply) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Duration != nil {
-		if marshalto, ok := interface{}(m.Duration).(interface {
+		if vtmsg, ok := interface{}(m.Duration).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
-			size, err := marshalto.MarshalToSizedBufferVT(dAtA[:i])
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -225,9 +225,7 @@ func (m *DiffRequest) SizeVT() (n int) {
 		}
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -247,9 +245,7 @@ func (m *DiffReply) SizeVT() (n int) {
 		}
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -537,6 +533,7 @@ func (m *DiffReply) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skip(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

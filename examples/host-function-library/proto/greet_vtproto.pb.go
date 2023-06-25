@@ -201,9 +201,7 @@ func (m *GreetRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -217,9 +215,7 @@ func (m *GreetReply) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -233,9 +229,7 @@ func (m *SanRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -249,9 +243,7 @@ func (m *SanResponse) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -593,6 +585,7 @@ func (m *SanResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skip(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

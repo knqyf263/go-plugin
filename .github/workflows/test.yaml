@@ -20,15 +20,15 @@ jobs:
       fail-fast: false
       matrix:
         tinygo-version:
-          - "0.25.0"
           - "0.26.0"
           - "0.27.0"
+          - "0.28.1"
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
 

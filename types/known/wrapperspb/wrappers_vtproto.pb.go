@@ -400,9 +400,7 @@ func (m *DoubleValue) SizeVT() (n int) {
 	if m.Value != 0 {
 		n += 9
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -415,9 +413,7 @@ func (m *FloatValue) SizeVT() (n int) {
 	if m.Value != 0 {
 		n += 5
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -430,9 +426,7 @@ func (m *Int64Value) SizeVT() (n int) {
 	if m.Value != 0 {
 		n += 1 + sov(uint64(m.Value))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -445,9 +439,7 @@ func (m *UInt64Value) SizeVT() (n int) {
 	if m.Value != 0 {
 		n += 1 + sov(uint64(m.Value))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -460,9 +452,7 @@ func (m *Int32Value) SizeVT() (n int) {
 	if m.Value != 0 {
 		n += 1 + sov(uint64(m.Value))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -475,9 +465,7 @@ func (m *UInt32Value) SizeVT() (n int) {
 	if m.Value != 0 {
 		n += 1 + sov(uint64(m.Value))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -490,9 +478,7 @@ func (m *BoolValue) SizeVT() (n int) {
 	if m.Value {
 		n += 2
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -506,9 +492,7 @@ func (m *StringValue) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -522,9 +506,7 @@ func (m *BytesValue) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -1177,6 +1159,7 @@ func (m *BytesValue) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skip(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

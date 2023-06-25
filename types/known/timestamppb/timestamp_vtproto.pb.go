@@ -91,9 +91,7 @@ func (m *Timestamp) SizeVT() (n int) {
 	if m.Nanos != 0 {
 		n += 1 + sov(uint64(m.Nanos))
 	}
-	if m.unknownFields != nil {
-		n += len(m.unknownFields)
-	}
+	n += len(m.unknownFields)
 	return n
 }
 
@@ -192,6 +190,7 @@ func (m *Timestamp) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+
 func skip(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
