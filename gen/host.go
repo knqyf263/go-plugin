@@ -161,7 +161,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 	// Plugin loading
 	structName := strings.ToLower(service.GoName[:1]) + service.GoName[1:]
-	var hostFunctionsArg, exportHostFunctions string
+	var hostFunctionsArg, exportHostFunctions, hostFunctionsParam string
 	if f.hostService != nil {
 		hostFunctionsArg = ", hostFunctions " + f.hostService.GoName
 		exportHostFunctions = `
@@ -170,6 +170,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		if err := h.Instantiate(ctx, r); err != nil {
 			return nil, err
 		}`
+		hostFunctionsParam = ", hostFunctions"
 	}
 
 	g.P(fmt.Sprintf(`
@@ -183,6 +184,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		service.GoName,
 	))
 
+	// Load method
 	g.P(fmt.Sprintf("func (p *%s) Load(ctx %s, pluginPath string %s) (%s, error) {",
 		pluginName,
 		g.QualifiedGoIdent(contextPackage.Ident("Context")),
@@ -191,6 +193,26 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	))
 
 	g.P(fmt.Sprintf(`b, err := %s(pluginPath)
+		if err != nil {
+			return nil, err
+		}
+		
+		return p.LoadFromBinary(ctx, %s(b) %s)
+	}`,
+		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
+		g.QualifiedGoIdent(bytesPackage.Ident("NewReader")),
+		hostFunctionsParam,
+	))
+
+	g.P(fmt.Sprintf("func (p *%s) LoadFromBinary(ctx %s, reader %s %s) (%s, error) {",
+		pluginName,
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		g.QualifiedGoIdent(ioPackage.Ident("Reader")),
+		hostFunctionsArg,
+		structName,
+	))
+
+	g.P(fmt.Sprintf(`b, err := %s(reader)
 		if err != nil {
 			return nil, err
 		}
@@ -235,7 +257,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 			return nil, fmt.Errorf("API version mismatch, host: %%d, plugin: %%d", %sAPIVersion, results[0])
 		}
 `,
-		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
+		g.QualifiedGoIdent(ioPackage.Ident("ReadAll")),
 		exportHostFunctions,
 		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
 		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),
