@@ -8,16 +8,12 @@ package wasm
 import "C"
 
 import (
-	"reflect"
 	"unsafe"
 )
 
 func PtrToByte(ptr, size uint32) []byte {
-	var b []byte
-	s := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	s.Len = uintptr(size)
-	s.Cap = uintptr(size)
-	s.Data = uintptr(ptr)
+	b := unsafe.Slice((*byte)(unsafe.Pointer(uintptr(ptr))), size)
+
 	return b
 }
 
