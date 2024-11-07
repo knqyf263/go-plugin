@@ -9,7 +9,7 @@ on:
       - 'LICENSE'
   pull_request:
 env:
-  GO_VERSION: "1.20"
+  GO_VERSION: "1.22"
   PROTOC_VERSION: "21.12"
 
 jobs:
@@ -20,9 +20,10 @@ jobs:
       fail-fast: false
       matrix:
         tinygo-version:
-          - "0.31.1"
-          - "0.30.0"
-          - "0.29.0"
+          - "0.31.2"
+          - "0.32.0"
+          - "0.33.0"
+          - "0.34.0"
 
     steps:
       - uses: actions/checkout@v3
