@@ -65,6 +65,23 @@ This architecture has a number of benefits:
 
 Download a binary [here][releases] and put it in `$PATH`.
 
+## Support Policy
+
+`go-plugin` is based on [Wazero][wazero] runtime and has Support Policy which follows [same rules](https://github.com/tetratelabs/wazero/?tab=readme-ov-file#go):
+> wazero follows the same version policy as Go's [Release Policy](https://go.dev/doc/devel/release): two versions. wazero will ensure these versions work and bugs are valid if there's an issue with a current Go version.
+
+For example, if current version of Go is `go1.23`, `go-plugin` is ensured to work with Go versions:
+- `go1.22`
+- `go1.23`
+
+as well as support corresponding `tinygo` versions (having most recent patch versions according to [Semver][semver]):
+- `v0.31.2`
+- `v0.32.0`
+- `v0.33.0`
+- `v0.34.0`
+
+Mapping between different versions of Go and TinyGo can be found on [Go compatibility matrix](https://tinygo.org/docs/reference/go-compat-matrix/) and [Releases](https://github.com/tinygo-org/tinygo/releases) page.
+
 ## Usage
 To use the plugin system, you must take the following steps.
 These are high-level steps that must be done.
@@ -502,3 +519,5 @@ Welcome your contribution :)
 [json-example]: https://github.com/knqyf263/go-plugin/tree/main/tests/host-functions
 
 [releases]: https://github.com/knqyf263/go-plugin/releases
+
+[semver]: https://semver.org/
