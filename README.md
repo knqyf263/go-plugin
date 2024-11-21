@@ -149,6 +149,20 @@ $ protoc --go-plugin_out=. --go-plugin_opt=paths=source_relative greeting.proto
 
 Then, you will find 4 files generated in the same directory, `greet.pb.go`, `greet_host.pb.go`, `greet_plugin.pb.go` and `greet_vtproto.pb.go`.
 
+#### Optional: Skip the go protobuf generation
+
+If the plugin should be used together with other generators like
+[`protoc-gen-go`](https://pkg.go.dev/github.com/golang/protobuf/protoc-gen-go),
+then it may be helpful to skip the standard protobuf generation. This can be
+done by setting the option `disable_pb_gen=true`, for example:
+
+```shell
+$ protoc \
+    --go_opt=paths=source_relative --go_out=. \
+    --go-plugin_opt=paths=source_relative,disable_pb_gen=true --go-plugin_out=. \
+    greeting.proto
+```
+
 ### Implement a plugin
 The `Greeter` interface is generated as below in the previous step. 
 

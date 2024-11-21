@@ -89,6 +89,10 @@ type Generator struct {
 	vtgen  *vtgenerator.Generator
 }
 
+type Options struct {
+	DisablePBGen bool
+}
+
 func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
 	ext := &vtgenerator.Extensions{}
 	featureNames := []string{"marshal", "unmarshal", "size"}
@@ -138,9 +142,9 @@ func replaceImport(m *protogen.Message) {
 }
 
 // GenerateFiles generates the contents of a .pb.go file.
-func (gg *Generator) GenerateFiles(file *protogen.File) *protogen.GeneratedFile {
+func (gg *Generator) GenerateFiles(file *protogen.File, opts Options) *protogen.GeneratedFile {
 	f := gg.newFileInfo(file)
-	gg.generatePBFile(f)
+	gg.generatePBFile(f, opts.DisablePBGen)
 	gg.generateHostFile(f)
 	gg.generatePluginFile(f)
 	gg.generateVTFile(f)
@@ -148,8 +152,12 @@ func (gg *Generator) GenerateFiles(file *protogen.File) *protogen.GeneratedFile 
 	return nil
 }
 
-func (gg *Generator) generatePBFile(f *fileInfo) {
-	filename := f.GeneratedFilenamePrefix + ".pb.go"
+func (gg *Generator) generatePBFile(f *fileInfo, disabled bool) {
+	filename := f.GeneratedFilenamePrefix
+	if disabled {
+		filename += "_service"
+	}
+	filename += ".pb.go"
 	g := gg.plugin.NewGeneratedFile(filename, f.GoImportPath)
 
 	gg.generateHeader(g, f)
@@ -165,14 +173,16 @@ func (gg *Generator) generatePBFile(f *fileInfo) {
 		g.P()
 	}
 
-	for i, imps := 0, f.Desc.Imports(); i < imps.Len(); i++ {
-		gg.genImport(g, f, imps.Get(i))
-	}
-	for _, enum := range f.allEnums {
-		genEnum(g, f, enum)
-	}
-	for _, message := range f.allMessages {
-		genMessage(g, f, message)
+	if !disabled {
+		for i, imps := 0, f.Desc.Imports(); i < imps.Len(); i++ {
+			gg.genImport(g, f, imps.Get(i))
+		}
+		for _, enum := range f.allEnums {
+			genEnum(g, f, enum)
+		}
+		for _, message := range f.allMessages {
+			genMessage(g, f, message)
+		}
 	}
 	for _, service := range f.allServices {
 		genServiceInterface(g, f, service)
@@ -252,7 +262,7 @@ func (gg *Generator) genImport(g *protogen.GeneratedFile, f *fileInfo, imp proto
 
 	// Generate public imports by generating the imported file, parsing it,
 	// and extracting every symbol that should receive a forwarding declaration.
-	impGen := gg.GenerateFiles(impFile)
+	impGen := gg.GenerateFiles(impFile, Options{})
 	impGen.Skip()
 	b, err := impGen.Content()
 	if err != nil {
