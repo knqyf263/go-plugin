@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-)
 
-//go:generate tinygo build -o plugin-morning/morning.wasm -scheduler=none -target=wasi --no-debug plugin-morning/morning.go
-//go:generate tinygo build -o plugin-evening/evening.wasm -scheduler=none -target=wasi --no-debug plugin-evening/evening.go
-
-import (
 	"github.com/knqyf263/go-plugin/examples/helloworld/greeting"
 )
+
+//go:generate go build -o plugin-morning/morning.wasm -buildmode=c-shared plugin-morning/morning.go
+//go:generate go build -o plugin-evening/evening.wasm -buildmode=c-shared plugin-evening/evening.go
 
 func main() {
 	if err := run(); err != nil {

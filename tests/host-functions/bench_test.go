@@ -13,7 +13,7 @@ import (
 func BenchmarkHostFunctions(b *testing.B) {
 	b.ReportAllocs()
 	ctx := context.Background()
-	mc := wazero.NewModuleConfig().WithStdout(os.Stdout)
+	mc := wazero.NewModuleConfig().WithStdout(os.Stdout).WithStartFunctions("_initialize")
 	p, err := proto.NewGreeterPlugin(ctx, proto.WazeroRuntime(func(ctx context.Context) (wazero.Runtime, error) {
 		return proto.DefaultWazeroRuntime()(ctx)
 	}), proto.WazeroModuleConfig(mc))

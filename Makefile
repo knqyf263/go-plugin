@@ -12,16 +12,16 @@ build: $(GOBIN)/protoc-gen-go-plugin
 $(GOBIN)/protoc-gen-go-plugin: $(go_sources)
 	go build ${LDFLAGS} -o $(GOPATH)/bin/protoc-gen-go-plugin cmd/protoc-gen-go-plugin/main.go
 
-tinygo_examples := $(shell find examples -path "*/plugin*/*.go")
+go_examples := $(shell find examples -path "*/plugin*/*.go")
 .PHONY: build.examples
-build.examples: $(tinygo_examples:.go=.wasm)
+build.examples: $(go_examples:.go=.wasm)
 
-tinygo_tests := $(shell find tests -path "*/plugin*/*.go")
+go_tests := $(shell find tests -path "*/plugin*/*.go")
 .PHONY: build.tests
-build.tests: $(tinygo_tests:.go=.wasm)
+build.tests: $(go_tests:.go=.wasm)
 
 %.wasm: %.go $(GOBIN)/protoc-gen-go-plugin
-	tinygo build -o $@ -scheduler=none --no-debug --target=wasi $<
+	GOOS=wasip1 GOARCH=wasm go build -o $@ -buildmode=c-shared $<
 
 proto_files := $(shell find . -name "*.proto")
 .PHONY: protoc

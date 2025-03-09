@@ -86,10 +86,10 @@ resp, err := hostFunctions.HttpGet(ctx, greeting.HttpGetRequest{Url: "http://ifc
 ```
 
 ## Compile a plugin
-Use TinyGo to compile the plugin to Wasm.
+Use Go to compile the plugin to Wasm.
 
 ```shell
-$ tinygo build -o plugin/plugin.wasm -scheduler=none -target=wasi --no-debug plugin/plugin.go
+$ GOOS=wasip1 GOARCH=wasm go build -o plugin/plugin.wasm -buildmode=c-shared plugin/plugin.go
 ```
 
 ## Run

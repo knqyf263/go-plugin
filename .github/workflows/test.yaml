@@ -9,27 +9,20 @@ on:
       - 'LICENSE'
   pull_request:
 env:
-  GO_VERSION: "1.22"
   PROTOC_VERSION: "21.12"
 
 jobs:
   test:
-    name: Test (TinyGo ${{ matrix.tinygo-version }})
+    name: Test
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        tinygo-version:
-          - "0.31.2"
-          - "0.32.0"
-          - "0.33.0"
-          - "0.34.0"
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
 
@@ -47,11 +40,6 @@ jobs:
           unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /usr/local/bin/
         env:
           PB_REL: https://github.com/protocolbuffers/protobuf/releases
-
-      - name: Install TinyGo
-        run: |
-          wget https://github.com/tinygo-org/tinygo/releases/download/v${{ matrix.tinygo-version }}/tinygo_${{ matrix.tinygo-version }}_amd64.deb
-          sudo dpkg -i tinygo_${{ matrix.tinygo-version }}_amd64.deb
 
       - name: Run unit tests
         run: make test
