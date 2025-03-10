@@ -336,14 +336,6 @@ API version mismatch, host: 2, plugin: 1
 ### File access
 Refer to [this example][wasi-example].
 
-### JSON parsing
-TinyGo currently doesn't support `encoding/json`.
-https://tinygo.org/docs/reference/lang-support/stdlib/
-
-You have to use third-party JSON libraries such as [gjson][gjson] and [easyjson][easyjson].
-
-Also, you can export a host function. The example is available [here][json-example].
-
 ### Logging
 `fmt.Printf` can be used in plugins if you attach `os.Stdout` as below. See [the example][wasi-example] for more details.
 
@@ -507,8 +499,6 @@ Welcome your contribution :)
 [protoc]: https://grpc.io/docs/protoc-installation/
 [vtprotobuf]: https://github.com/planetscale/vtprotobuf
 [plugin]: https://pkg.go.dev/plugin
-[gjson]: https://github.com/tidwall/gjson
-[easyjson]: https://github.com/mailru/easyjson
 [wazero-go]: https://wazero.io/languages/go/
 
 [protobuf-go]: https://github.com/protocolbuffers/protobuf-go
@@ -524,7 +514,6 @@ Welcome your contribution :)
 
 [wasi-example]: https://github.com/knqyf263/go-plugin/tree/main/examples/wasi
 [host-functions-example]: https://github.com/knqyf263/go-plugin/tree/main/examples/host-functions
-[json-example]: https://github.com/knqyf263/go-plugin/tree/main/tests/host-functions
 
 [releases]: https://github.com/knqyf263/go-plugin/releases
 
