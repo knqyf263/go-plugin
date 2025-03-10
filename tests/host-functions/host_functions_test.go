@@ -34,6 +34,27 @@ func TestHostFunctions(t *testing.T) {
 	assert.Equal(t, want, reply.GetMessage())
 }
 
+func TestStd(t *testing.T) {
+	ctx := context.Background()
+	mc := wazero.NewModuleConfig().WithStdout(os.Stdout).WithStartFunctions("_initialize")
+	p, err := proto.NewGreeterPlugin(ctx, proto.WazeroRuntime(func(ctx context.Context) (wazero.Runtime, error) {
+		return proto.DefaultWazeroRuntime()(ctx)
+	}), proto.WazeroModuleConfig(mc))
+	require.NoError(t, err)
+
+	plugin, err := p.Load(ctx, "plugin-std/plugin.wasm", nil)
+	require.NoError(t, err)
+	defer plugin.Close(ctx)
+
+	reply, err := plugin.Greet(ctx, &proto.GreetRequest{
+		Name: "Sato",
+	})
+	require.NoError(t, err)
+
+	want := "Hello, Sato. This is Suzuki (age 30)."
+	assert.Equal(t, want, reply.GetMessage())
+}
+
 func TestEmptyRequest(t *testing.T) {
 	ctx := context.Background()
 	p, err := proto.NewGreeterPlugin(ctx)
