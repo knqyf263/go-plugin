@@ -49,15 +49,14 @@ This is useful when interface signatures are changing, protocol level changes ar
 When a protocol version is incompatible, a human friendly error message is shown to the end user.
 
 ## Architecture
-`go-plugin` generates Go SDK for a host and TinyGo SDK for plugins.
-As the Wasm support in Go is not mature, plugins need to be compiled to Wasm by [TinyGo][tinygo], which is an alternative compile for Go source code, at the moment.
+`go-plugin` generates Go SDK for a host and plugins.
 The plugin system works by loading the Wasm file and communicating over exporting/exported methods.
 
 This architecture has a number of benefits:
 
 - Plugins can't crash your host process: a panic in a plugin is handled by the Wasm runtime and doesn't panic the plugin user.
-- Plugins are very easy to write: just write a Go application and `tinygo build`.
-- Plugins are very easy to distribute: just compile the TinyGo source code to the Wasm binary once and distribute it.
+- Plugins are very easy to write: just write a Go application and `GOOS=wasip1 GOARCH=wasm go build`.
+- Plugins are very easy to distribute: just compile the Go source code to the Wasm binary once and distribute it.
 - Plugins are very easy to install: just put the Wasm binary in a location where the host will find it.
 - Plugins can be secure: the plugin is executed in a sandbox and doesn't have access to the local filesystem and network by default.
 
@@ -65,22 +64,16 @@ This architecture has a number of benefits:
 
 Download a binary [here][releases] and put it in `$PATH`.
 
-## Support Policy
+## Requirements
+- Go 1.24+
 
+## Support Policy
 `go-plugin` is based on [Wazero][wazero] runtime and has Support Policy which follows [same rules](https://github.com/tetratelabs/wazero/?tab=readme-ov-file#go):
 > wazero follows the same version policy as Go's [Release Policy](https://go.dev/doc/devel/release): two versions. wazero will ensure these versions work and bugs are valid if there's an issue with a current Go version.
 
-For example, if current version of Go is `go1.23`, `go-plugin` is ensured to work with Go versions:
-- `go1.22`
-- `go1.23`
-
-as well as support corresponding `tinygo` versions (having most recent patch versions according to [Semver][semver]):
-- `v0.31.2`
-- `v0.32.0`
-- `v0.33.0`
-- `v0.34.0`
-
-Mapping between different versions of Go and TinyGo can be found on [Go compatibility matrix](https://tinygo.org/docs/reference/go-compat-matrix/) and [Releases](https://github.com/tinygo-org/tinygo/releases) page.
+For example, if current version of Go is `go1.25`, `go-plugin` is ensured to work with Go versions:
+- `go1.24`
+- `go1.25`
 
 ## Usage
 To use the plugin system, you must take the following steps.
@@ -106,7 +99,7 @@ Install the following tools:
 
 - `knqyf263/go-plugin` (See `Installation`)
 - [protoc][protoc]
-- [TinyGo][tinygo-installation]
+- [Go][go-installation]
 
 ### Choose the interface you want to expose for plugins
 Create `greeting.proto`.
@@ -176,7 +169,7 @@ A plugin author needs to implement `Greeter` and registers the struct via `Regis
 In this tutorial, we use `plugin.go` as a file name, but it doesn't matter.
 
 ```go
-//go:build tinygo.wasm
+//go:build wasip1
 
 package main
 
@@ -186,8 +179,10 @@ import (
 	"github.com/path/to/your/greeting"
 )
 
-// main is required for TinyGo to compile to Wasm.
-func main() {
+// main is required for Go to compile to Wasm.
+func main() {}
+
+func init() {
 	greeting.RegisterGreeter(MyPlugin{})
 }
 
@@ -200,10 +195,10 @@ func (m MyPlugin) SayHello(ctx context.Context, request greeting.GreetRequest) (
 }
 ```
 
-Then, compile it to Wasm by TinyGo.
+Then, compile it to Wasm by Go.
 
 ```shell
-$ tinygo build -o plugin.wasm -scheduler=none -target=wasi --no-debug plugin.go
+$ GOOS=wasip1 GOARCH=wasm go build -o plugin.wasm -buildmode=c-shared plugin.go
 ```
 
 ### Implement a host
@@ -341,14 +336,6 @@ API version mismatch, host: 2, plugin: 1
 ### File access
 Refer to [this example][wasi-example].
 
-### JSON parsing
-TinyGo currently doesn't support `encoding/json`.
-https://tinygo.org/docs/reference/lang-support/stdlib/
-
-You have to use third-party JSON libraries such as [gjson][gjson] and [easyjson][easyjson].
-
-Also, you can export a host function. The example is available [here][json-example].
-
 ### Logging
 `fmt.Printf` can be used in plugins if you attach `os.Stdout` as below. See [the example][wasi-example] for more details.
 
@@ -392,9 +379,6 @@ Pull:
 $ oras pull ghcr.io/knqyf263/my-plugin:latest
 ```
 
-### Other TinyGo tips
-You can refer to https://wazero.io/languages/tinygo/.
-
 ## Under the hood
 `go-plugin` uses [wazero][wazero] for Wasm runtime.
 Also, it customizes [protobuf-go][protobuf-go] and [vtprotobuf][vtprotobuf] for generating Go code from proto files.
@@ -409,13 +393,16 @@ It is not schema-driven like Protocol Buffers and can easily break signature.
 
 ### Why not using [protobuf-go][protobuf-go] directly?
 
-TinyGo [doesn't support Protocol Buffers](https://github.com/tinygo-org/tinygo/issues/2667) natively as of today.
-`go-plugin` generates Go code differently from [protobuf-go] so that TinyGo can compile it.
+`go-plugin` used to rely on TinyGo, which [doesn't support Protocol Buffers](https://github.com/tinygo-org/tinygo/issues/2667) natively.
+`go-plugin` generates Go code differently from [protobuf-go] so that TinyGo could compile it.
+Now that Go supports WASI (wasip1), I haven't fully verified if Protocol Buffers works properly when Go code is compiled to Wasm.
+This is an area that needs further testing and validation.
 
 ### Why replacing known types with custom ones?
 You might be aware that your generated code imports [github.com/knqyf263/go-plugin/types/known][go-plugin-known], not [github.com/protocolbuffers/protobuf-go/types/known][protobuf-go-known] when you import types from `google/protobuf/xxx.proto` (a.k.a well-known types) in your proto file.
 As described above, `TinyGo` cannot compile `github.com/protocolbuffers/protobuf-go/types/known` since those types use reflection.
 `go-plugin` provides well-known types compatible with TinyGo and use them.
+With the release of Go 1.24, which [has improved Wasm support](https://go.dev/blog/wasmexport), these workarounds might no longer be necessary. However, I haven't fully verified this yet.
 
 ### Why using `// go:plugin` for parameters rather than [protobuf extensions][protobuf-extensions]?
 An extension must be registered in [Protobuf Global Extension Registry][protobuf-registry] to issue a unique extension number.
@@ -428,7 +415,7 @@ You can see other reasons [here][wazero-go].
 We might be able to add support for Go as an experimental feature.
 
 ### What about other languages?
-`go-plugin` currently supports TinyGo plugins only, but technically, any language that can be compiled into Wasm can be supported.
+`go-plugin` currently supports Go plugins only, but theoretically, any language that can be compiled into Wasm can be supported.
 Welcome your contribution :)
 
 ## TODO
@@ -512,15 +499,12 @@ Welcome your contribution :)
 [protoc]: https://grpc.io/docs/protoc-installation/
 [vtprotobuf]: https://github.com/planetscale/vtprotobuf
 [plugin]: https://pkg.go.dev/plugin
-[gjson]: https://github.com/tidwall/gjson
-[easyjson]: https://github.com/mailru/easyjson
 [wazero-go]: https://wazero.io/languages/go/
 
 [protobuf-go]: https://github.com/protocolbuffers/protobuf-go
 [protobuf-go-known]: https://github.com/protocolbuffers/protobuf-go/tree/master/types/known
 
-[tinygo]: https://tinygo.org/
-[tinygo-installation]: https://tinygo.org/getting-started/install/
+[go-installation]: https://go.dev/doc/install
 
 [hello-world]: https://github.com/knqyf263/go-plugin/tree/1ebeeca373affc319802989c0fe6304f014861c4/examples/helloworld
 [go-plugin-known]: https://github.com/knqyf263/go-plugin/tree/1ebeeca373affc319802989c0fe6304f014861c4/types/known
@@ -530,7 +514,6 @@ Welcome your contribution :)
 
 [wasi-example]: https://github.com/knqyf263/go-plugin/tree/main/examples/wasi
 [host-functions-example]: https://github.com/knqyf263/go-plugin/tree/main/examples/host-functions
-[json-example]: https://github.com/knqyf263/go-plugin/tree/main/tests/host-functions
 
 [releases]: https://github.com/knqyf263/go-plugin/releases
 

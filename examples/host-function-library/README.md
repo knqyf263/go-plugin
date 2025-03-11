@@ -86,7 +86,7 @@ if err != nil {
 ```
 
 ## Compile a plugin
-Use TinyGo to compile the plugin to Wasm.
+Use Go to compile the plugin to Wasm.
 
 ```shell
 $ go generate main.go

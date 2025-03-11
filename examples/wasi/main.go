@@ -27,7 +27,8 @@ func run() error {
 	mc := wazero.NewModuleConfig().
 		WithStdout(os.Stdout). // Attach stdout so that the plugin can write outputs to stdout
 		WithStderr(os.Stderr). // Attach stderr so that the plugin can write errors to stderr
-		WithFS(f)              // Loaded plugins can access only files that the host allows.
+		WithFS(f).             // Loaded plugins can access only files that the host allows.
+		WithStartFunctions("_initialize")
 	p, err := cat.NewFileCatPlugin(ctx, cat.WazeroModuleConfig(mc))
 	if err != nil {
 		return err

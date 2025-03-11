@@ -1,4 +1,4 @@
-//go:build tinygo.wasm
+//go:build wasip1
 
 package main
 
@@ -10,8 +10,10 @@ import (
 	"github.com/knqyf263/go-plugin/types/known/durationpb"
 )
 
-// main is required for TinyGo to compile to Wasm.
-func main() {
+// main is required for Go to compile to Wasm.
+func main() {}
+
+func init() {
 	known.RegisterWellKnown(WellKnownPlugin{})
 }
 

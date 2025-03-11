@@ -107,7 +107,7 @@ func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
 			continue
 		}
 
-		// Replace google known types with custom types so that TinyGo can build them.
+		// Replace google known types with custom types so that they can be used in Wasm.
 		walkMessages(f.Messages, func(message *protogen.Message) {
 			for _, field := range message.Fields {
 				replaceImport(field.Message)

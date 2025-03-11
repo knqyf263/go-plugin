@@ -1,4 +1,4 @@
-//go:build tinygo.wasm
+//go:build (js && wasm) || wasip1
 
 package main
 
@@ -9,8 +9,9 @@ import (
 	"github.com/knqyf263/go-plugin/examples/helloworld/greeting"
 )
 
-// main is required for TinyGo to compile to Wasm.
-func main() {
+func main() {}
+
+func init() {
 	greeting.RegisterGreeter(GoodEvening{})
 }
 

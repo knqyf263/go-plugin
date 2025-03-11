@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/knqyf263/go-plugin/tests/host-functions/proto"
@@ -21,15 +22,13 @@ type TestPlugin struct{}
 var _ proto.Greeter = (*TestPlugin)(nil)
 
 func (p TestPlugin) Greet(ctx context.Context, request *proto.GreetRequest) (*proto.GreetReply, error) {
-	hostFunctions := proto.NewHostFunctions()
-
-	// Call the host function with nil request
-	resp, err := hostFunctions.ParseJson(ctx, nil)
-	if err != nil {
+	// Use encoding/json to parse JSON
+	var person proto.Person
+	if err := json.Unmarshal([]byte(`{"name": "Suzuki", "age": 30}`), &person); err != nil {
 		return nil, err
 	}
 
 	return &proto.GreetReply{
-		Message: fmt.Sprintf("Hello, empty request '%s' and empty '%s' host function request", request.GetName(), resp.GetResponse().GetName()),
+		Message: fmt.Sprintf("Hello, %s. This is %s (age %d).", request.GetName(), person.GetName(), person.GetAge()),
 	}, nil
 }

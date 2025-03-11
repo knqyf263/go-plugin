@@ -17,7 +17,7 @@ func (gg *Generator) generateHostFile(f *fileInfo) {
 	}
 
 	// Build constraints
-	g.P("//go:build !tinygo.wasm")
+	g.P("//go:build !wasip1")
 
 	gg.generateHeader(g, f)
 	gg.genHostFunctions(g, f)
@@ -142,7 +142,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	))
 	g.P(fmt.Sprintf(`o := &WazeroConfig{
 				newRuntime: DefaultWazeroRuntime(),
-				moduleConfig: %s(),
+				moduleConfig: %s().WithStartFunctions("_initialize"),
 			}
 
 			for _, opt := range opts {
@@ -332,7 +332,7 @@ func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Me
 				results, err := p.malloc.Call(ctx, dataSize)
 				%s
 				dataPtr = results[0]
-				// This pointer is managed by TinyGo, but TinyGo is unaware of external usage.
+				// This pointer is managed by the Wasm module, which is unaware of external usage.
 				// So, we have to free it when finished
 				defer p.free.Call(ctx, dataPtr)
 

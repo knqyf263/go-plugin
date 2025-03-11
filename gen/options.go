@@ -13,7 +13,7 @@ func (gg *Generator) generateOptionsFile(f *fileInfo) {
 	}
 
 	// Build constraints
-	g.P("//go:build !tinygo.wasm")
+	g.P("//go:build !wasip1")
 	gg.generateHeader(g, f)
 
 	g.P(fmt.Sprintf(`type wazeroConfigOption func(plugin *WazeroConfig)

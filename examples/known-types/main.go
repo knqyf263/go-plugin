@@ -22,7 +22,7 @@ func main() {
 
 func run() error {
 	ctx := context.Background()
-	mc := wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)
+	mc := wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr).WithStartFunctions("_initialize")
 	p, err := known.NewWellKnownPlugin(ctx, known.WazeroModuleConfig(mc))
 	if err != nil {
 		return err

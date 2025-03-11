@@ -8,7 +8,7 @@ import (
 )
 
 func (gg *Generator) generatePluginFile(f *fileInfo) {
-	// This file will be imported by plugins written in TinyGo
+	// This file will be imported by plugins written in Go
 	filename := f.GeneratedFilenamePrefix + "_plugin.pb.go"
 	g := gg.plugin.NewGeneratedFile(filename, f.GoImportPath)
 
@@ -17,7 +17,7 @@ func (gg *Generator) generatePluginFile(f *fileInfo) {
 	}
 
 	// Build constraints
-	g.P("//go:build tinygo.wasm")
+	g.P("//go:build wasip1")
 
 	// Generate header
 	gg.generateHeader(g, f)
@@ -36,7 +36,7 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	// API version
 	g.P("const ", service.GoName, "PluginAPIVersion = ", service.Version)
 	g.P(fmt.Sprintf(`
-		//export %s_api_version
+		//go:wasmexport %s_api_version
 		func _%s_api_version() uint64 {
 			return %sPluginAPIVersion
 		}`,
@@ -54,7 +54,7 @@ func genPlugin(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 	// Exported functions
 	for _, method := range service.Methods {
 		exportedName := toSnakeCase(service.GoName + method.GoName)
-		g.P("//export ", exportedName)
+		g.P("//go:wasmexport ", exportedName)
 		g.P("func _", exportedName, "(ptr, size uint32) uint64 {")
 		g.P("b := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("PtrToByte")), "(ptr, size)")
 
@@ -131,7 +131,7 @@ func genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 			g.QualifiedGoIdent(method.Output.GoIdent),
 			g.QualifiedGoIdent(pluginWasmPackage.Ident("ByteToPtr")),
 			importedName,
-			g.QualifiedGoIdent(pluginWasmPackage.Ident("FreePtr")),
+			g.QualifiedGoIdent(pluginWasmPackage.Ident("Free")),
 			g.QualifiedGoIdent(pluginWasmPackage.Ident("PtrToByte")),
 			g.QualifiedGoIdent(method.Output.GoIdent),
 		))

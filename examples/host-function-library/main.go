@@ -1,6 +1,6 @@
-//go:build !tinygo.wasm
+//go:build !wasip1
 
-//go:generate tinygo build -o plugin/plugin.wasm -scheduler=none -target=wasi --no-debug plugin/plugin.go
+//go:generate go build -o plugin/plugin.wasm -buildmode=c-shared plugin/plugin.go
 
 package main
 
