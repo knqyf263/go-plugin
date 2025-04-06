@@ -161,9 +161,10 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 
 	// Plugin loading
 	structName := strings.ToLower(service.GoName[:1]) + service.GoName[1:]
-	var hostFunctionsArg, exportHostFunctions string
+	var hostFunctionsArg, exportHostFunctions, hostFunctionsParam string
 	if f.hostService != nil {
-		hostFunctionsArg = ", hostFunctions " + f.hostService.GoName
+		hostFunctionsParam = ", hostFunctions"
+		hostFunctionsArg = hostFunctionsParam + " " + f.hostService.GoName
 		exportHostFunctions = `
 		h := _` + strings.ToLower(f.hostService.GoName[:1]) + f.hostService.GoName[1:] + `{hostFunctions}
 
@@ -190,7 +191,28 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 		structName,
 	))
 
-	g.P(fmt.Sprintf(`b, err := %s(pluginPath)
+	g.P(fmt.Sprintf(`f, err := %s(pluginPath)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		
+		return p.LoadReader(ctx, f %s)
+	}
+	`,
+		g.QualifiedGoIdent(osPackage.Ident("Open")),
+		hostFunctionsParam,
+	))
+
+	g.P(fmt.Sprintf("func (p *%s) LoadReader(ctx %s, reader %s %s) (%s, error) {",
+		pluginName,
+		g.QualifiedGoIdent(contextPackage.Ident("Context")),
+		g.QualifiedGoIdent(ioPackage.Ident("Reader")),
+		hostFunctionsArg,
+		structName,
+	))
+
+	g.P(fmt.Sprintf(`b, err := %s(reader)
 		if err != nil {
 			return nil, err
 		}
@@ -235,7 +257,7 @@ func genHost(g *protogen.GeneratedFile, f *fileInfo, service *serviceInfo) {
 			return nil, fmt.Errorf("API version mismatch, host: %%d, plugin: %%d", %sAPIVersion, results[0])
 		}
 `,
-		g.QualifiedGoIdent(osPackage.Ident("ReadFile")),
+		g.QualifiedGoIdent(ioPackage.Ident("ReadAll")),
 		exportHostFunctions,
 		g.QualifiedGoIdent(wazeroSysPackage.Ident("ExitError")),
 		g.QualifiedGoIdent(fmtPackage.Ident("Errorf")),
@@ -385,8 +407,10 @@ func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Me
 	g.P("}")
 }
 
-var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
-var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
+var (
+	matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
+	matchAllCap   = regexp.MustCompile("([a-z0-9])([A-Z])")
+)
 
 func toSnakeCase(str string) string {
 	snake := matchFirstCap.ReplaceAllString(str, "${1}_${2}")
