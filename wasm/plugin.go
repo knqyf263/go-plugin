@@ -5,6 +5,7 @@
 package wasm
 
 import (
+	"runtime"
 	"unsafe"
 )
 
@@ -38,6 +39,9 @@ func Malloc(size uint32) uint32 {
 func Free(ptr uint32) {
 	// Remove the slice from the allocations map so the GC can reclaim it later.
 	delete(allocations, ptr)
+
+	// Let GC run
+	runtime.Gosched()
 }
 
 func PtrToByte(ptr, size uint32) []byte {

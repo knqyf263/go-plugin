@@ -355,11 +355,6 @@ func genPluginMethod(g *protogen.GeneratedFile, f *fileInfo, method *protogen.Me
 				resSize &^= %s
 			}
 
-			// We don't need the memory after deserialization: make sure it is freed.
-			if resPtr != 0 {
-				defer p.free.Call(ctx, uint64(resPtr))     
-			}
-
 			// The pointer is a linear memory offset, which is where we write the name.
 			bytes, ok := p.module.Memory().Read(resPtr, resSize)
 			if !ok {
