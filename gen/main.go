@@ -76,7 +76,7 @@ var (
 	wazeroSysPackage  goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero/sys")
 	wazeroWasiPackage goImportPath = protogen.GoImportPath("github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1")
 
-	pluginWasmPackage goImportPath = protogen.GoImportPath("github.com/knqyf263/go-plugin/wasm")
+	pluginWasmPackage goImportPath = protogen.GoImportPath("")
 )
 
 type goImportPath interface {
@@ -91,6 +91,7 @@ type Generator struct {
 
 type Options struct {
 	DisablePBGen bool
+	WasmPackage  string
 }
 
 func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
@@ -144,6 +145,7 @@ func replaceImport(m *protogen.Message) {
 // GenerateFiles generates the contents of a .pb.go file.
 func (gg *Generator) GenerateFiles(file *protogen.File, opts Options) *protogen.GeneratedFile {
 	f := gg.newFileInfo(file)
+	pluginWasmPackage = protogen.GoImportPath(opts.WasmPackage)
 	gg.generatePBFile(f, opts.DisablePBGen)
 	gg.generateHostFile(f)
 	gg.generatePluginFile(f)
