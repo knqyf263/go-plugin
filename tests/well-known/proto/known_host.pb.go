@@ -168,11 +168,6 @@ func (p *knownTypesTestPlugin) Test(ctx context.Context, request *Request) (*Res
 		resSize &^= (1 << 31)
 	}
 
-	// We don't need the memory after deserialization: make sure it is freed.
-	if resPtr != 0 {
-		defer p.free.Call(ctx, uint64(resPtr))
-	}
-
 	// The pointer is a linear memory offset, which is where we write the name.
 	bytes, ok := p.module.Memory().Read(resPtr, resSize)
 	if !ok {
@@ -339,11 +334,6 @@ func (p *emptyTestPlugin) DoNothing(ctx context.Context, request *emptypb.Empty)
 	if (resSize & (1 << 31)) > 0 {
 		isErrResponse = true
 		resSize &^= (1 << 31)
-	}
-
-	// We don't need the memory after deserialization: make sure it is freed.
-	if resPtr != 0 {
-		defer p.free.Call(ctx, uint64(resPtr))
 	}
 
 	// The pointer is a linear memory offset, which is where we write the name.
