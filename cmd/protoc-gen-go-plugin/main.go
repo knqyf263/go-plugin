@@ -13,8 +13,14 @@ func main() {
 	var flags flag.FlagSet
 	disablePbGen := flags.Bool("disable_pb_gen", false, "disable .pb.go generation")
 	wasmPackage := flags.String("wasm_package", "github.com/knqyf263/go-plugin/wasm", "override package that provide wasm memory management")
+	useGoPluginKnownTypes := flags.Bool("goplugin_known_types", true, "use go-plugin known types")
 	protogen.Options{ParamFunc: flags.Set}.Run(func(plugin *protogen.Plugin) error {
-		g, err := gen.NewGenerator(plugin)
+		opts := gen.Options{
+			UseGoPluginKnownTypes: *useGoPluginKnownTypes,
+			DisablePBGen:          *disablePbGen,
+			WasmPackage:           *wasmPackage,
+		}
+		g, err := gen.NewGenerator(plugin, opts)
 		if err != nil {
 			return err
 		}
@@ -23,7 +29,7 @@ func main() {
 			if !f.Generate {
 				continue
 			}
-			g.GenerateFiles(f, gen.Options{DisablePBGen: *disablePbGen, WasmPackage: *wasmPackage})
+			g.GenerateFiles(f, opts)
 		}
 
 		plugin.SupportedFeatures = uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL)

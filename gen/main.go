@@ -90,11 +90,12 @@ type Generator struct {
 }
 
 type Options struct {
-	DisablePBGen bool
-	WasmPackage  string
+	UseGoPluginKnownTypes bool
+	DisablePBGen          bool
+	WasmPackage           string
 }
 
-func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
+func NewGenerator(plugin *protogen.Plugin, opts Options) (*Generator, error) {
 	ext := &vtgenerator.Extensions{}
 	featureNames := []string{"marshal", "unmarshal", "size"}
 
@@ -104,7 +105,7 @@ func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
 	}
 
 	for _, f := range plugin.Files {
-		if !f.Generate {
+		if !f.Generate || !opts.UseGoPluginKnownTypes {
 			continue
 		}
 
