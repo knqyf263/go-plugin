@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - update-plugin
     paths-ignore:
       - '*.md'
       - 'imgs/**'
