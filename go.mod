@@ -3,10 +3,10 @@ module github.com/knqyf263/go-plugin
 go 1.24.0
 
 require (
-	github.com/planetscale/vtprotobuf v0.4.0
+	github.com/planetscale/vtprotobuf v0.6.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tetratelabs/wazero v1.9.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.31.0
 )
 
 require (

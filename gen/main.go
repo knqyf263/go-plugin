@@ -94,10 +94,10 @@ type Options struct {
 }
 
 func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
-	ext := &vtgenerator.Extensions{}
+	cfg := &vtgenerator.Config{}
 	featureNames := []string{"marshal", "unmarshal", "size"}
 
-	vtgen, err := vtgenerator.NewGenerator(plugin.Files, featureNames, ext)
+	vtgen, err := vtgenerator.NewGenerator(plugin, featureNames, cfg)
 	if err != nil {
 		return nil, err
 	}
