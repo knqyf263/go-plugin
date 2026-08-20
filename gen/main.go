@@ -4,11 +4,14 @@
 package gen
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/parser"
 	"go/token"
 	"math"
+	"path"
 	"strconv"
 	"strings"
 	"unicode"
@@ -102,25 +105,12 @@ func NewGenerator(plugin *protogen.Plugin) (*Generator, error) {
 		return nil, err
 	}
 
-	for _, f := range plugin.Files {
-		if !f.Generate {
+	// Replace google known types with custom types so that they can be used in Wasm.
+	for _, file := range plugin.Files {
+		if !file.Generate {
 			continue
 		}
-
-		// Replace google known types with custom types so that they can be used in Wasm.
-		walkMessages(f.Messages, func(message *protogen.Message) {
-			for _, field := range message.Fields {
-				replaceImport(field.Message)
-			}
-			replaceImport(message)
-		})
-		for _, svc := range f.Services {
-			for _, method := range svc.Methods {
-				walkMessages([]*protogen.Message{method.Input, method.Output}, func(message *protogen.Message) {
-					replaceImport(message)
-				})
-			}
-		}
+		replaceImports(file)
 	}
 
 	return &Generator{
@@ -138,6 +128,23 @@ func replaceImport(m *protogen.Message) {
 			strings.ReplaceAll(string(m.GoIdent.GoImportPath),
 				knownTypesPrefix, "github.com/knqyf263/go-plugin/types/known/"),
 		)
+	}
+}
+
+func replaceImports(file *protogen.File) {
+	walkMessages(file.Messages, func(message *protogen.Message) {
+		for _, field := range message.Fields {
+			replaceImport(field.Message)
+		}
+		replaceImport(message)
+	})
+
+	for _, svc := range file.Services {
+		for _, method := range svc.Methods {
+			walkMessages([]*protogen.Message{method.Input, method.Output}, func(message *protogen.Message) {
+				replaceImport(message)
+			})
+		}
 	}
 }
 
@@ -195,7 +202,7 @@ func (gg *Generator) generateHeader(g *protogen.GeneratedFile, f *fileInfo) {
 	genStandaloneComments(g, f, int32(genid.FileDescriptorProto_Package_field_number))
 
 	// TODO
-	//packageDoc := genPackageKnownComment(f)
+	// packageDoc := genPackageKnownComment(f)
 	g.P("package ", f.GoPackageName)
 	g.P()
 }
@@ -904,4 +911,124 @@ func parseParam(comment string) (Parameter, error) {
 		}
 	}
 	return param, nil
+}
+
+func dedupeImports(src []byte) ([]byte, error) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "", src, parser.ParseComments)
+	if err != nil {
+		return nil, err
+	}
+
+	type importInfo struct {
+		spec *ast.ImportSpec
+		name string
+		path string
+	}
+
+	imports := make(map[string][]importInfo)
+
+	for _, spec := range file.Imports {
+		importPath, err := strconv.Unquote(spec.Path.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		name := path.Base(importPath)
+		if spec.Name != nil {
+			name = spec.Name.Name
+		}
+
+		imports[importPath] = append(imports[importPath], importInfo{
+			spec: spec,
+			name: name,
+			path: importPath,
+		})
+	}
+
+	renames := make(map[string]string)
+	remove := make(map[*ast.ImportSpec]bool)
+
+	for importPath, specs := range imports {
+		if len(specs) < 2 {
+			continue
+		}
+
+		// Prefer the natural package name over aliases generated to
+		// disambiguate imports that used to have different paths.
+		preferred := path.Base(importPath)
+		canonical := specs[0]
+
+		for _, spec := range specs {
+			if spec.name == preferred {
+				canonical = spec
+				break
+			}
+		}
+
+		for _, spec := range specs {
+			if spec.spec == canonical.spec {
+				continue
+			}
+
+			if spec.name != canonical.name {
+				renames[spec.name] = canonical.name
+			}
+			remove[spec.spec] = true
+		}
+	}
+
+	if len(remove) == 0 {
+		return src, nil
+	}
+
+	ast.Inspect(file, func(node ast.Node) bool {
+		selector, ok := node.(*ast.SelectorExpr)
+		if !ok {
+			return true
+		}
+
+		ident, ok := selector.X.(*ast.Ident)
+		if !ok {
+			return true
+		}
+
+		if name, ok := renames[ident.Name]; ok {
+			ident.Name = name
+		}
+
+		return true
+	})
+
+	for _, decl := range file.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.IMPORT {
+			continue
+		}
+
+		specs := gen.Specs[:0]
+		for _, spec := range gen.Specs {
+			importSpec, ok := spec.(*ast.ImportSpec)
+			if ok && remove[importSpec] {
+				continue
+			}
+			specs = append(specs, spec)
+		}
+		gen.Specs = specs
+	}
+
+	importSpecs := file.Imports[:0]
+	for _, spec := range file.Imports {
+		if !remove[spec] {
+			importSpecs = append(importSpecs, spec)
+		}
+	}
+	file.Imports = importSpecs
+
+	var buf bytes.Buffer
+	if err := format.Node(&buf, fset, file); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
