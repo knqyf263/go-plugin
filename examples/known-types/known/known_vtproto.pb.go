@@ -8,13 +8,13 @@ package known
 
 import (
 	fmt "fmt"
+
 	durationpb "github.com/knqyf263/go-plugin/types/known/durationpb"
 	structpb "github.com/knqyf263/go-plugin/types/known/structpb"
 	timestamppb "github.com/knqyf263/go-plugin/types/known/timestamppb"
-	proto "google.golang.org/protobuf/proto"
+	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
-	bits "math/bits"
 )
 
 const (
@@ -55,68 +55,32 @@ func (m *DiffRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.End != nil {
-		if vtmsg, ok := interface{}(m.End).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.End)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = encodeVarint(dAtA, i, uint64(len(encoded)))
+		size, err := (*timestamppb.Timestamp)(m.End).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x1a
 	}
 	if m.Start != nil {
-		if vtmsg, ok := interface{}(m.Start).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.Start)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = encodeVarint(dAtA, i, uint64(len(encoded)))
+		size, err := (*timestamppb.Timestamp)(m.Start).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x12
 	}
 	if m.Value != nil {
-		if vtmsg, ok := interface{}(m.Value).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.Value)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = encodeVarint(dAtA, i, uint64(len(encoded)))
+		size, err := (*structpb.Value)(m.Value).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -154,41 +118,18 @@ func (m *DiffReply) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Duration != nil {
-		if vtmsg, ok := interface{}(m.Duration).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.Duration)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = encodeVarint(dAtA, i, uint64(len(encoded)))
+		size, err := (*durationpb.Duration)(m.Duration).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func encodeVarint(dAtA []byte, offset int, v uint64) int {
-	offset -= sov(v)
-	base := offset
-	for v >= 1<<7 {
-		dAtA[offset] = uint8(v&0x7f | 0x80)
-		v >>= 7
-		offset++
-	}
-	dAtA[offset] = uint8(v)
-	return base
-}
 func (m *DiffRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -196,34 +137,16 @@ func (m *DiffRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Value != nil {
-		if size, ok := interface{}(m.Value).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.Value)
-		}
-		n += 1 + l + sov(uint64(l))
+		l = (*structpb.Value)(m.Value).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Start != nil {
-		if size, ok := interface{}(m.Start).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.Start)
-		}
-		n += 1 + l + sov(uint64(l))
+		l = (*timestamppb.Timestamp)(m.Start).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.End != nil {
-		if size, ok := interface{}(m.End).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.End)
-		}
-		n += 1 + l + sov(uint64(l))
+		l = (*timestamppb.Timestamp)(m.End).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -236,25 +159,13 @@ func (m *DiffReply) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Duration != nil {
-		if size, ok := interface{}(m.Duration).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.Duration)
-		}
-		n += 1 + l + sov(uint64(l))
+		l = (*durationpb.Duration)(m.Duration).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
 }
 
-func sov(x uint64) (n int) {
-	return (bits.Len64(x|1) + 6) / 7
-}
-func soz(x uint64) (n int) {
-	return sov(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
 func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -263,7 +174,7 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
 			if shift >= 64 {
-				return ErrIntOverflow
+				return protohelpers.ErrIntOverflow
 			}
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
@@ -291,7 +202,7 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
-					return ErrIntOverflow
+					return protohelpers.ErrIntOverflow
 				}
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
@@ -304,11 +215,11 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			if msglen < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			postIndex := iNdEx + msglen
 			if postIndex < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
@@ -316,16 +227,8 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Value == nil {
 				m.Value = &structpb.Value{}
 			}
-			if unmarshal, ok := interface{}(m.Value).(interface {
-				UnmarshalVT([]byte) error
-			}); ok {
-				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Value); err != nil {
-					return err
-				}
+			if err := (*structpb.Value)(m.Value).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		case 2:
@@ -335,7 +238,7 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
-					return ErrIntOverflow
+					return protohelpers.ErrIntOverflow
 				}
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
@@ -348,11 +251,11 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			if msglen < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			postIndex := iNdEx + msglen
 			if postIndex < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
@@ -360,16 +263,8 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Start == nil {
 				m.Start = &timestamppb.Timestamp{}
 			}
-			if unmarshal, ok := interface{}(m.Start).(interface {
-				UnmarshalVT([]byte) error
-			}); ok {
-				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Start); err != nil {
-					return err
-				}
+			if err := (*timestamppb.Timestamp)(m.Start).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		case 3:
@@ -379,7 +274,7 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
-					return ErrIntOverflow
+					return protohelpers.ErrIntOverflow
 				}
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
@@ -392,11 +287,11 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			if msglen < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			postIndex := iNdEx + msglen
 			if postIndex < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
@@ -404,26 +299,18 @@ func (m *DiffRequest) UnmarshalVT(dAtA []byte) error {
 			if m.End == nil {
 				m.End = &timestamppb.Timestamp{}
 			}
-			if unmarshal, ok := interface{}(m.End).(interface {
-				UnmarshalVT([]byte) error
-			}); ok {
-				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.End); err != nil {
-					return err
-				}
+			if err := (*timestamppb.Timestamp)(m.End).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skip(dAtA[iNdEx:])
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
 			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
@@ -446,7 +333,7 @@ func (m *DiffReply) UnmarshalVT(dAtA []byte) error {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
 			if shift >= 64 {
-				return ErrIntOverflow
+				return protohelpers.ErrIntOverflow
 			}
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
@@ -474,7 +361,7 @@ func (m *DiffReply) UnmarshalVT(dAtA []byte) error {
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
-					return ErrIntOverflow
+					return protohelpers.ErrIntOverflow
 				}
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
@@ -487,11 +374,11 @@ func (m *DiffReply) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			if msglen < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			postIndex := iNdEx + msglen
 			if postIndex < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
@@ -499,26 +386,18 @@ func (m *DiffReply) UnmarshalVT(dAtA []byte) error {
 			if m.Duration == nil {
 				m.Duration = &durationpb.Duration{}
 			}
-			if unmarshal, ok := interface{}(m.Duration).(interface {
-				UnmarshalVT([]byte) error
-			}); ok {
-				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Duration); err != nil {
-					return err
-				}
+			if err := (*durationpb.Duration)(m.Duration).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skip(dAtA[iNdEx:])
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
 			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLength
+				return protohelpers.ErrInvalidLength
 			}
 			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
@@ -533,88 +412,3 @@ func (m *DiffReply) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-
-func skip(dAtA []byte) (n int, err error) {
-	l := len(dAtA)
-	iNdEx := 0
-	depth := 0
-	for iNdEx < l {
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return 0, ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return 0, io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		wireType := int(wire & 0x7)
-		switch wireType {
-		case 0:
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return 0, ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return 0, io.ErrUnexpectedEOF
-				}
-				iNdEx++
-				if dAtA[iNdEx-1] < 0x80 {
-					break
-				}
-			}
-		case 1:
-			iNdEx += 8
-		case 2:
-			var length int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return 0, ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return 0, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				length |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if length < 0 {
-				return 0, ErrInvalidLength
-			}
-			iNdEx += length
-		case 3:
-			depth++
-		case 4:
-			if depth == 0 {
-				return 0, ErrUnexpectedEndOfGroup
-			}
-			depth--
-		case 5:
-			iNdEx += 4
-		default:
-			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
-		}
-		if iNdEx < 0 {
-			return 0, ErrInvalidLength
-		}
-		if depth == 0 {
-			return iNdEx, nil
-		}
-	}
-	return 0, io.ErrUnexpectedEOF
-}
-
-var (
-	ErrInvalidLength        = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflow          = fmt.Errorf("proto: integer overflow")
-	ErrUnexpectedEndOfGroup = fmt.Errorf("proto: unexpected end of group")
-)
