@@ -85,9 +85,16 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		}
 `)
 
-	errorHandling := `if err != nil {
-			panic(err)
-		}`
+	// panicAt panics with context about the failed host function step.
+	// wazero recovers panics from host functions and aborts the in-flight
+	// guest invocation with an error, so this does not take down the host
+	// process; the recovered error is returned to the caller instead of a
+	// bare, context-free panic value.
+	panicAt := func(method, step string) string {
+		return fmt.Sprintf(`if err != nil {
+			panic(fmt.Sprintf("host function %%s: %s: %%v", %q, err))
+		}`, step, method)
+	}
 	for _, method := range f.hostService.Methods {
 		g.P(method.Comments.Leading, fmt.Sprintf(`
 			func (h %s) _%s(ctx %s, m %s, stack []uint64) {`,
@@ -98,20 +105,20 @@ func (gg *Generator) genHostFunctions(g *protogen.GeneratedFile, f *fileInfo) {
 		))
 		g.P("offset, size := uint32(stack[0]), uint32(stack[1])")
 		g.P("buf, err := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("ReadMemory")), "(m.Memory(), offset, size)")
-		g.P(errorHandling)
+		g.P(panicAt(method.GoName, "read memory"))
 
 		g.P("request := new(", g.QualifiedGoIdent(method.Input.GoIdent), ")")
 		g.P(`err = request.UnmarshalVT(buf)`)
-		g.P(errorHandling)
+		g.P(panicAt(method.GoName, "unmarshal request"))
 
 		g.P("resp, err := h.", method.GoName, "(ctx, request)")
-		g.P(errorHandling)
+		g.P(panicAt(method.GoName, "host implementation"))
 
 		g.P("buf, err = resp.MarshalVT()")
-		g.P(errorHandling)
+		g.P(panicAt(method.GoName, "marshal response"))
 
 		g.P("ptr, err := ", g.QualifiedGoIdent(pluginWasmPackage.Ident("WriteMemory")), "(ctx, m, buf)")
-		g.P(errorHandling)
+		g.P(panicAt(method.GoName, "write memory"))
 
 		g.P("ptrLen := (ptr << uint64(32)) | uint64(len(buf))")
 		g.P("stack[0] = ptrLen")
